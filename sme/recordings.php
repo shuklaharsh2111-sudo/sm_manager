@@ -116,7 +116,7 @@ if ($recUserId > 0) {
         <?php if (!$meetingRecords): ?>
             <div class="rec-empty">
                 <h3>No meeting records yet</h3>
-                <p>When a meeting is over, add its attendees and points discussed on the dashboard. It is saved here.</p>
+                <p>Send the MOM with the attendees and points discussed from the dashboard. Once the admin approves it, the meeting is saved here.</p>
             </div>
         <?php else: ?>
             <div class="rec-list" id="meetingRecordList">

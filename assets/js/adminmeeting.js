@@ -262,6 +262,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 state.className = "mom-state mom-rejected";
             }
             review.remove();
+            const momDetails = document.getElementById(`mom-row-${meetingId}`);
+            if (momDetails) {
+                momDetails.hidden = true;
+            }
+            const momToggle = document.querySelector(`.mom-toggle[data-meeting-id="${meetingId}"]`);
+            if (momToggle) {
+                momToggle.remove();
+            }
             const pending = document.getElementById("momPendingMeetings");
             if (pending) {
                 pending.textContent = Math.max(0, parseInt(pending.textContent, 10) - 1);

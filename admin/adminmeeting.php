@@ -272,7 +272,7 @@ $momLabels = [
 <section id="adminMeetingsSection">
     <header class="am-head">
         <h2>SME Meetings</h2>
-        <p>Approve an SME's MOM request to mark the meeting as over. The SME then adds the attendees and points discussed, which you can open under View details.</p>
+        <p>Approve an SME's MOM request to mark the meeting as over. The SME sends the attendees and points discussed with the MOM, so you can review them under View details before approving.</p>
     </header>
 
     <div class="am-stats">
@@ -300,7 +300,7 @@ $momLabels = [
                 $meetingId = (int) $meeting['id'];
                 $status = ($meeting['meeting_status'] ?? 'not_done') === 'done' ? 'done' : 'not_done';
                 $momStatus = (string) ($meeting['mom_status'] ?? 'none');
-                $canView = $momStatus === 'approved' || $status === 'done';
+                $canView = in_array($momStatus, ['pending', 'approved'], true) || $status === 'done';
                 $sentAt = !empty($meeting['mom_sent_at']) ? date('d M, h:i A', strtotime((string) $meeting['mom_sent_at'])) : '';
                 ?>
                 <article class="am-card<?= $momStatus === 'pending' ? ' needs-approval' : '' ?>"
@@ -333,8 +333,8 @@ $momLabels = [
                         <?php if ($momStatus === 'pending'): ?>
                             <div class="mom-review" data-meeting-id="<?= $meetingId ?>">
                                 <p class="mom-review-text">
-                                    <?= meetingEscape($meeting['sme_name'] ?? 'The SME') ?> asked you to approve this MOM<?= $sentAt !== '' ? ' on ' . meetingEscape($sentAt) : '' ?>.
-                                    Approving marks the meeting as over.
+                                    <?= meetingEscape($meeting['sme_name'] ?? 'The SME') ?> sent this MOM<?= $sentAt !== '' ? ' on ' . meetingEscape($sentAt) : '' ?>. Review the attendees and points discussed below, then approve.
+                                    Approving marks the meeting as over and saves it to the SME's Records.
                                 </p>
                                 <div class="mom-review-buttons">
                                     <button type="button" class="mom-approve" data-mom-action="approve">Approve</button>
@@ -351,12 +351,12 @@ $momLabels = [
                         <?php endif; ?>
 
                         <?php if ($canView): ?>
-                            <button type="button" class="mom-toggle" data-meeting-id="<?= $meetingId ?>">View details</button>
+                            <button type="button" class="mom-toggle" data-meeting-id="<?= $meetingId ?>"><?= $momStatus === 'pending' ? 'Hide details' : 'View details' ?></button>
                         <?php endif; ?>
                     </div>
 
                     <?php if ($canView): ?>
-                        <div class="mom-row" id="mom-row-<?= $meetingId ?>" hidden>
+                        <div class="mom-row" id="mom-row-<?= $meetingId ?>"<?= $momStatus === 'pending' ? '' : ' hidden' ?>>
                             <?= smeMeetingRenderMom($meeting, $momAttendees[$meetingId] ?? [], $momSummaries[$meetingId] ?? '') ?>
                         </div>
                     <?php endif; ?>

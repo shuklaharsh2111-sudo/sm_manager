@@ -1,8 +1,8 @@
 <?php
 /*
-| MOM request. The SME clicks "Send MOM" once the meeting has started (or earlier than planned
-| if it ends early). Nothing else is sent: the meeting is over only when the admin approves.
-| Attendees and points discussed are added afterwards (sme/save_details.php).
+| MOM request. The SME clicks "Send MOM" once the meeting has started, fills in the attendees and
+| points discussed, and sends them together. The admin sees them and approves (meeting over, saved
+| to Records) or sends the MOM back.
 */
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -47,6 +47,48 @@ if (!$meetingId || $meetingId < 1) {
     momResponse(422, ['success' => false, 'message' => 'Invalid meeting.']);
 }
 
+$clean = static function ($value, int $max): string {
+    $value = preg_replace('/\s+/u', ' ', trim((string) $value));
+    return mb_substr((string) $value, 0, $max);
+};
+$postList = static function (string $key): array {
+    $value = $_POST[$key] ?? [];
+    return is_array($value) ? array_values($value) : [];
+};
+
+// Attendees: Name + Designation rows.
+$attendees = [];
+$attendeeRoles = $postList('attendee_designation');
+foreach ($postList('attendee_name') as $i => $rawName) {
+    $name = $clean($rawName, 150);
+    $role = $clean($attendeeRoles[$i] ?? '', 150);
+    if ($name === '' && $role === '') {
+        continue;
+    }
+    if ($name === '') {
+        momResponse(422, ['success' => false, 'message' => 'Enter a name for every attendee you add.']);
+    }
+    $attendees[] = ['name' => $name, 'designation' => $role];
+}
+if (count($attendees) > 20) {
+    momResponse(422, ['success' => false, 'message' => 'You can add up to 20 attendees.']);
+}
+
+// Points discussed.
+$points = [];
+foreach ($postList('point') as $rawPoint) {
+    $point = $clean($rawPoint, 500);
+    if ($point !== '') {
+        $points[] = $point;
+    }
+}
+if (!$points) {
+    momResponse(422, ['success' => false, 'message' => 'Add at least one point discussed.']);
+}
+if (count($points) > 30) {
+    momResponse(422, ['success' => false, 'message' => 'You can add up to 30 points.']);
+}
+
 try {
     if (!smeMeetingEnsureSchema($conn)) {
         throw new RuntimeException('Meeting tables are not ready.');
@@ -77,28 +119,38 @@ try {
         momResponse(422, ['success' => false, 'message' => 'The MOM request is already waiting for admin approval.']);
     }
 
+    $json = json_encode($points, JSON_UNESCAPED_UNICODE);
+    $conn->begin_transaction();
     $upd = $conn->prepare(
         "UPDATE sme_meetings
          SET mom_status = 'pending', mom_sent_at = NOW(),
-             mom_reviewed_at = NULL, mom_reviewed_by = NULL, mom_admin_note = NULL
+             mom_reviewed_at = NULL, mom_reviewed_by = NULL, mom_admin_note = NULL,
+             points_discussed = ?, details_saved_at = NOW()
          WHERE id = ? AND sme_user_id = ? AND mom_status IN ('none','rejected') AND meeting_status <> 'done'"
     );
-    $upd->bind_param('ii', $meetingId, $userId);
+    $upd->bind_param('sii', $json, $meetingId, $userId);
     if (!$upd->execute() || $upd->affected_rows < 1) {
         $upd->close();
+        $conn->rollback();
         momResponse(409, ['success' => false, 'message' => 'Unable to send the MOM. Refresh and try again.']);
     }
     $upd->close();
+    $attendees = smeMeetingSaveAttendees($conn, $meetingId, $attendees);
+    $conn->commit();
 
+    $meeting['points_discussed'] = $json;
+    $meeting['details_saved_at'] = date('Y-m-d H:i:s');
     $meeting['mom_status'] = 'pending';
-    $attendees = smeMeetingFetchAttendees($conn, [$meetingId])[$meetingId] ?? [];
 
     momResponse(200, [
         'success'   => true,
-        'message'   => 'MOM request sent to admin. The meeting is over once the admin approves it.',
+        'message'   => 'MOM sent to admin with the attendees and points discussed. The meeting is over once the admin approves it.',
         'card_html' => smeMeetingRenderCard($meeting, $attendees),
     ]);
 } catch (Throwable $e) {
+    if (isset($conn) && $conn instanceof mysqli) {
+        @$conn->rollback();
+    }
     error_log('Send MOM error: ' . $e->getMessage());
     momResponse(500, ['success' => false, 'message' => 'Unable to send the MOM. Please try again.']);
 }

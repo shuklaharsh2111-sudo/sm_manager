@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     checkMeetingStarts();
     setInterval(checkMeetingStarts, 1000);
 
-    /* ---------- MOM request -> admin approves -> SME adds the details ---------- */
+    /* ---------- Send MOM (attendees + points) -> admin approves -> saved to Records ---------- */
     const momEndpoint = meetingsSection.dataset.momEndpoint;
     const detailsEndpoint = meetingsSection.dataset.detailsEndpoint;
     const csrfToken = () => form.querySelector('[name="csrf_token"]').value;
@@ -192,38 +192,26 @@ document.addEventListener("DOMContentLoaded", () => {
         card.replaceWith(holder.content.firstElementChild);
     };
 
+    const removeCard = (card) => {
+        card.classList.add("is-leaving");
+        window.setTimeout(() => {
+            card.remove();
+            if (!meetingsList.querySelector(".sme-meeting-card")) {
+                const empty = document.createElement("div");
+                empty.className = "sme-meeting-empty";
+                empty.id = "noMeetingsMessage";
+                empty.innerHTML =
+                    "<h3>No Upcoming Meetings</h3>" +
+                    "<p>Your scheduled meetings will appear here. Finished meetings are in " +
+                    '<a class="sme-records-link" href="sme.php?page=recordings">Records</a>.</p>';
+                meetingsList.appendChild(empty);
+            }
+        }, 280);
+    };
+
     meetingsList.addEventListener("click", async (event) => {
         const card = event.target.closest(".sme-meeting-card");
         if (!card) {
-            return;
-        }
-
-        const requestButton = event.target.closest("[data-mom-request]");
-        if (requestButton && momEndpoint) {
-            if (!window.confirm("Send the MOM request to the admin? The meeting is over once the admin approves it.")) {
-                return;
-            }
-            requestButton.disabled = true;
-            const data = new FormData();
-            data.append("csrf_token", csrfToken());
-            data.append("meeting_id", card.dataset.meetingId);
-            try {
-                const response = await fetch(momEndpoint, {
-                    method: "POST",
-                    body: data,
-                    credentials: "same-origin",
-                    headers: { Accept: "application/json" }
-                });
-                const result = await response.json();
-                if (!response.ok || !result.success) {
-                    throw new Error(result.message || "Unable to send the MOM.");
-                }
-                swapCard(card, result.card_html);
-                showMessage(result.message, "success");
-            } catch (error) {
-                showMessage(error.message || "Something went wrong.", "error");
-                requestButton.disabled = false;
-            }
             return;
         }
 
@@ -313,14 +301,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     `.sme-meeting-card[data-meeting-id="${item.id}"]`
                 );
                 const stillPending = item.card_html.includes("is-pending");
-                if (card && !stillPending) {
+                if (!card || stillPending) {
+                    return;
+                }
+                if (item.card_html.includes("is-approved")) {
+                    // Approved: the details were sent with the MOM, so the meeting now lives in Records.
+                    removeCard(card);
+                    showMessage("The admin approved the MOM. The meeting is saved in Records.", "success");
+                } else {
                     swapCard(card, item.card_html);
-                    showMessage(
-                        item.card_html.includes("is-approved")
-                            ? "The admin approved the MOM. The meeting is over: add the details to save it in Records."
-                            : "The admin sent the MOM back. See the reason on the card and send it again.",
-                        "success"
-                    );
+                    showMessage("The admin sent the MOM back. See the reason on the card, update it and send it again.", "success");
                 }
             });
         } catch (error) {
@@ -331,19 +321,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     meetingsList.addEventListener("submit", async (event) => {
         const momForm = event.target.closest("[data-mom-form]");
-        if (!momForm || !detailsEndpoint) {
+        if (!momForm) {
             return;
         }
         event.preventDefault();
+        // "send": attendees + points go to the admin together with the MOM.
+        // "save": legacy meetings the admin already marked done without details.
+        const sending = momForm.dataset.momMode === "send";
+        const endpointUrl = sending ? momEndpoint : detailsEndpoint;
+        if (!endpointUrl) {
+            return;
+        }
         const card = momForm.closest(".sme-meeting-card");
         const submit = momForm.querySelector(".sme-mom-send");
+        const label = momForm.dataset.submitLabel || submit.textContent;
+        const hasPoint = Array.from(momForm.querySelectorAll('[name="point[]"]')).some(
+            (input) => input.value.trim() !== ""
+        );
+        if (!hasPoint) {
+            showMessage("Add at least one point discussed.", "error");
+            return;
+        }
+        if (sending && !window.confirm("Send the MOM with these attendees and points to the admin? The meeting is over once the admin approves it.")) {
+            return;
+        }
         const formData = new FormData(momForm);
         formData.append("csrf_token", csrfToken());
         formData.append("meeting_id", card.dataset.meetingId);
         submit.disabled = true;
-        submit.textContent = "Saving...";
+        submit.textContent = sending ? "Sending..." : "Saving...";
         try {
-            const response = await fetch(detailsEndpoint, {
+            const response = await fetch(endpointUrl, {
                 method: "POST",
                 body: formData,
                 credentials: "same-origin",
@@ -353,29 +361,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok || !result.success) {
                 throw new Error(result.message || "Unable to save the details.");
             }
-            // The meeting is over and its details are saved: it now lives in Records.
-            card.classList.add("is-leaving");
-            window.setTimeout(() => {
-                card.remove();
-                if (!meetingsList.querySelector(".sme-meeting-card")) {
-                    const empty = document.createElement("div");
-                    empty.className = "sme-meeting-empty";
-                    empty.id = "noMeetingsMessage";
-                    empty.innerHTML =
-                        "<h3>No Upcoming Meetings</h3>" +
-                        "<p>Your scheduled meetings will appear here. Finished meetings are in " +
-                        '<a class="sme-records-link" href="sme.php?page=recordings">Records</a>.</p>';
-                    meetingsList.appendChild(empty);
-                }
-            }, 280);
-            showMessage(
-                result.message || "Meeting details saved to Records.",
-                "success"
-            );
+            if (sending) {
+                swapCard(card, result.card_html);
+            } else {
+                removeCard(card);
+            }
+            showMessage(result.message || "Saved.", "success");
         } catch (error) {
             showMessage(error.message || "Something went wrong.", "error");
             submit.disabled = false;
-            submit.textContent = "Save to Records";
+            submit.textContent = label;
         }
     });
 

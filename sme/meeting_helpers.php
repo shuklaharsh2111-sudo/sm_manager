@@ -304,6 +304,34 @@ function smeMeetingMomRow(string $type, string $a = '', string $b = ''): string
 }
 
 /**
+ * Attendees + points discussed form.
+ * $mode 'send' = shown before the MOM is sent (submits to send_mom.php, the admin reviews it).
+ * $mode 'save' = legacy meetings that were marked done without details (submits to save_details.php).
+ */
+function smeMeetingRenderMomForm(array $attendees, array $points, string $mode, string $submitLabel): string
+{
+    $attendeeRows = '';
+    foreach ($attendees as $person) {
+        $attendeeRows .= smeMeetingMomRow('attendee', (string) $person['name'], (string) $person['designation']);
+    }
+    $pointRows = '';
+    foreach ($points as $point) {
+        $pointRows .= smeMeetingMomRow('point', (string) $point);
+    }
+    $html = '<form class="sme-mom-form" data-mom-form data-mom-mode="' . smeMeetingEsc($mode) . '" data-submit-label="' . smeMeetingEsc($submitLabel) . '" hidden>';
+    $html .= '<div class="sme-mt-section"><div class="sme-mt-section-head"><h4>Attendees</h4>'
+        . '<button type="button" class="sme-mt-add" data-mom-add="attendee" aria-label="Add attendee">+</button></div>'
+        . '<div class="sme-mt-rows" data-mom-rows="attendee">' . ($attendeeRows !== '' ? $attendeeRows : smeMeetingMomRow('attendee')) . '</div></div>';
+    $html .= '<div class="sme-mt-section"><div class="sme-mt-section-head"><h4>Points Discussed</h4>'
+        . '<button type="button" class="sme-mt-add" data-mom-add="point" aria-label="Add point">+</button></div>'
+        . '<div class="sme-mt-rows sme-mt-numbered" data-mom-rows="point">' . ($pointRows !== '' ? $pointRows : smeMeetingMomRow('point')) . '</div></div>';
+    $html .= '<div class="sme-mom-actions">'
+        . '<button type="button" class="sme-mom-cancel" data-mom-cancel>Cancel</button>'
+        . '<button type="submit" class="sme-mom-send">' . smeMeetingEsc($submitLabel) . '</button></div></form>';
+    return $html;
+}
+
+/**
  * One meeting card (HTML string).
  *
  * $meeting keys: id, subject, comp_name, meeting_date, meeting_time,
@@ -378,7 +406,7 @@ function smeMeetingRenderCard(array $meeting, array $attendees = []): string
         $html .= '<span></span>';
     }
     if (!$isDone && !$isPending) {
-        $html .= '<button type="button" class="sme-mom-btn" data-mom-request'
+        $html .= '<button type="button" class="sme-mom-btn" data-mom-request data-mom-open'
             . ($started ? '' : ' hidden') . '>'
             . ($momStatus === 'rejected' ? 'Send MOM again' : 'Send MOM') . '</button>';
     }
@@ -408,24 +436,24 @@ function smeMeetingRenderCard(array $meeting, array $attendees = []): string
     if ($isPending) {
         $html .= '<div class="sme-mom-box is-pending"><span class="sme-mom-badge">MOM sent</span>'
             . '<span>Waiting for admin approval</span></div>';
-    } elseif ($momStatus === 'rejected' && !$isDone) {
-        $html .= '<div class="sme-mom-box"><p class="sme-mom-rejected"><strong>MOM sent back by admin.</strong>'
-            . (!empty($meeting['mom_admin_note']) ? ' ' . $e($meeting['mom_admin_note']) : '') . '</p></div>';
+    } elseif (!$isDone) {
+        // Not sent yet (or sent back): the SME fills attendees + points here and sends them with the MOM.
+        $savedPoints = json_decode((string) ($meeting['points_discussed'] ?? ''), true);
+        $savedPoints = is_array($savedPoints) ? $savedPoints : [];
+        $html .= '<div class="sme-mom-box">';
+        if ($momStatus === 'rejected') {
+            $html .= '<p class="sme-mom-rejected"><strong>MOM sent back by admin.</strong>'
+                . (!empty($meeting['mom_admin_note']) ? ' ' . $e($meeting['mom_admin_note']) : '')
+                . ' Update the attendees / points and send it again.</p>';
+        }
+        $html .= smeMeetingRenderMomForm($attendees, $savedPoints, 'send', $momStatus === 'rejected' ? 'Send MOM again' : 'Send MOM to admin');
+        $html .= '</div>';
     } elseif ($isDone) {
         $html .= '<div class="sme-mom-box is-approved"><span class="sme-mom-badge">Meeting over</span>'
             . '<span>' . ($momStatus === 'approved' ? 'MOM approved by admin' : 'Marked done by admin') . '</span>';
         if (!$detailsSaved) {
             $html .= '<button type="button" class="sme-mom-btn" data-mom-open>Add details &amp; save to Records</button>';
-            $html .= '<form class="sme-mom-form" data-mom-form hidden>';
-            $html .= '<div class="sme-mt-section"><div class="sme-mt-section-head"><h4>Attendees</h4>'
-                . '<button type="button" class="sme-mt-add" data-mom-add="attendee" aria-label="Add attendee">+</button></div>'
-                . '<div class="sme-mt-rows" data-mom-rows="attendee">' . smeMeetingMomRow('attendee') . '</div></div>';
-            $html .= '<div class="sme-mt-section"><div class="sme-mt-section-head"><h4>Points Discussed</h4>'
-                . '<button type="button" class="sme-mt-add" data-mom-add="point" aria-label="Add point">+</button></div>'
-                . '<div class="sme-mt-rows sme-mt-numbered" data-mom-rows="point">' . smeMeetingMomRow('point') . '</div></div>';
-            $html .= '<div class="sme-mom-actions">'
-                . '<button type="button" class="sme-mom-cancel" data-mom-cancel>Cancel</button>'
-                . '<button type="submit" class="sme-mom-send">Save to Records</button></div></form>';
+            $html .= smeMeetingRenderMomForm([], [], 'save', 'Save to Records');
         }
         $html .= '</div>';
     }
@@ -435,7 +463,7 @@ function smeMeetingRenderCard(array $meeting, array $attendees = []): string
     $points = is_array($points) ? $points : [];
     $hasNext = !empty($meeting['next_meeting_date']);
 
-    if ($count > 0 || $points || $hasNext) {
+    if (($isDone || $isPending) && ($count > 0 || $points || $hasNext)) {
         $html .= '<details class="sme-meeting-details"' . ($detailsSaved ? ' open' : '') . '><summary>Meeting details</summary><div class="sme-meeting-details-body">';
 
         if ($count > 0) {
