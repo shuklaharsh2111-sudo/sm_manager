@@ -1,0 +1,566 @@
+/* SME creative review status section */
+.sme-creative-reviews {
+    margin: 0 0 24px;
+    padding: 22px;
+    color: var(--text-primary, #f3f4f6);
+    background: var(--bg-card, rgba(17, 24, 39, 0.82));
+    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.18));
+    border-radius: var(--radius-md, 18px);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+}
+.sme-creative-reviews-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+.sme-creative-eyebrow {
+    display: inline-block;
+    margin-bottom: 7px;
+    color: #a78bfa;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+.sme-creative-reviews-heading h2 {
+    margin: 0;
+    color: var(--text-primary, #f3f4f6);
+    font-size: clamp(19px, 2vw, 25px);
+    line-height: 1.25;
+}
+.sme-creative-reviews-heading p {
+    margin: 7px 0 0;
+    color: var(--text-muted, #9ca3af);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.sme-creative-total {
+    flex: 0 0 auto;
+    padding: 8px 11px;
+    color: #ddd6fe;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(167, 139, 250, 0.22);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 750;
+}
+.sme-creative-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.sme-creative-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px 14px;
+    background: rgba(148, 163, 184, 0.055);
+    border: 1px solid rgba(148, 163, 184, 0.13);
+    border-left: 3px solid #94a3b8;
+    border-radius: 12px;
+}
+.sme-creative-stat span {
+    color: var(--text-muted, #9ca3af);
+    font-size: 11px;
+    font-weight: 650;
+}
+.sme-creative-stat strong {
+    color: var(--text-primary, #f9fafb);
+    font-size: 21px;
+    line-height: 1;
+}
+.sme-creative-stat.is-approved { border-left-color: #34d399; }
+.sme-creative-stat.is-rejected { border-left-color: #f87171; }
+.sme-creative-stat.is-revision { border-left-color: #fb923c; }
+.sme-creative-stat.is-pending { border-left-color: #60a5fa; }
+.sme-creative-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 14px;
+}
+.sme-creative-card {
+    display: grid;
+    grid-template-columns: 94px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+    min-width: 0;
+    padding: 14px;
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.sme-creative-card:hover {
+    border-color: rgba(167, 139, 250, 0.42);
+    transform: translateY(-2px);
+}
+.sme-creative-thumb {
+    display: grid;
+    place-items: center;
+    width: 94px;
+    height: 104px;
+    overflow: hidden;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(167, 139, 250, 0.17);
+    border-radius: 10px;
+}
+.sme-creative-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sme-creative-thumb-fallback {
+    padding: 8px;
+    color: #c4b5fd;
+    font-size: 10px;
+    text-align: center;
+}
+.sme-creative-card-content { min-width: 0; }
+.sme-creative-card-topline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+}
+.sme-creative-platform {
+    color: var(--text-muted, #9ca3af);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.sme-creative-review-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.sme-creative-review-status.is-approved {
+    color: #6ee7b7;
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(52, 211, 153, 0.22);
+}
+.sme-creative-review-status.is-rejected {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(248, 113, 113, 0.22);
+}
+.sme-creative-review-status.is-revision {
+    color: #fdba74;
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(251, 146, 60, 0.22);
+}
+.sme-creative-review-status.is-pending {
+    color: #93c5fd;
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(96, 165, 250, 0.22);
+}
+.sme-creative-review-status.is-draft {
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.1);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+.sme-creative-card h3 {
+    margin: 0 0 5px;
+    color: var(--text-primary, #f3f4f6);
+    font-size: 14px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.sme-creative-company,
+.sme-creative-date {
+    margin: 0 0 4px;
+    color: var(--text-muted, #9ca3af);
+    font-size: 11px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.sme-creative-company { color: #c4b5fd; }
+.sme-creative-feedback {
+    margin-top: 10px;
+    padding: 10px 11px;
+    background: rgba(249, 115, 22, 0.07);
+    border: 1px solid rgba(251, 146, 60, 0.18);
+    border-radius: 9px;
+}
+.sme-creative-feedback.is-rejected {
+    background: rgba(239, 68, 68, 0.07);
+    border-color: rgba(248, 113, 113, 0.18);
+}
+.sme-creative-feedback strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #fdba74;
+    font-size: 10px;
+}
+.sme-creative-feedback.is-rejected strong { color: #fca5a5; }
+.sme-creative-feedback p {
+    margin: 0;
+    color: var(--text-primary, #e5e7eb);
+    font-size: 11px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.sme-creative-approved-note {
+    margin: 9px 0 0;
+    color: #6ee7b7;
+    font-size: 11px;
+    line-height: 1.5;
+}
+.sme-creative-empty,
+.sme-creative-message {
+    padding: 24px 16px;
+    color: var(--text-muted, #9ca3af);
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px dashed rgba(148, 163, 184, 0.22);
+    border-radius: 12px;
+    text-align: center;
+}
+.sme-creative-empty strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-primary, #f3f4f6);
+    font-size: 13px;
+}
+.sme-creative-empty p {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.6;
+}
+.sme-creative-message.is-error {
+    color: #fecaca;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+@media (max-width: 760px) {
+    .sme-creative-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+    .sme-creative-reviews { padding: 16px; }
+    .sme-creative-reviews-heading { flex-direction: column; }
+    .sme-creative-card { grid-template-columns: 76px minmax(0, 1fr); gap: 11px; padding: 11px; }
+    .sme-creative-thumb { width: 76px; height: 88px; }
+    .sme-creative-stat { padding: 10px; }
+    .sme-creative-stat span { font-size: 10px; }
+}
+
+/* Keep SME creative cards grouped by their current admin review status. */
+.sme-creative-status-section {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+.sme-creative-status-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 13px;
+}
+.sme-creative-status-section-heading h3 {
+    margin: 0;
+    color: var(--text-primary, #f3f4f6);
+    font-size: 16px;
+    line-height: 1.35;
+}
+.sme-creative-status-section-heading p {
+    margin: 5px 0 0;
+    color: var(--text-muted, #9ca3af);
+    font-size: 11px;
+    line-height: 1.5;
+}
+.sme-creative-section-count {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.sme-creative-status-section.is-pending .sme-creative-status-section-heading h3 { color: #93c5fd; }
+.sme-creative-status-section.is-approved .sme-creative-status-section-heading h3 { color: #6ee7b7; }
+.sme-creative-status-section.is-rejected .sme-creative-status-section-heading h3 { color: #fca5a5; }
+.sme-creative-status-section.is-revision .sme-creative-status-section-heading h3 { color: #fdba74; }
+.sme-creative-status-section.is-draft .sme-creative-status-section-heading h3 { color: #cbd5e1; }
+.sme-creative-section-empty {
+    padding: 15px 16px;
+    color: var(--text-muted, #9ca3af);
+    background: rgba(15, 23, 42, 0.28);
+    border: 1px dashed rgba(148, 163, 184, 0.18);
+    border-radius: 10px;
+    font-size: 11px;
+}
+@media (max-width: 480px) {
+    .sme-creative-status-section-heading { align-items: flex-start; }
+    .sme-creative-status-section-heading h3 { font-size: 14px; }
+    .sme-creative-section-count { padding: 5px 8px; }
+}
+
+/* ==========================================================================
+   Rejected & Redo Required pages
+   ========================================================================== */
+.sme-creative-reviews.is-rejected,
+.sme-creative-reviews.is-revision {
+    --status-color: #f87171;
+    --status-soft: rgba(239, 68, 68, 0.09);
+    --status-line: rgba(248, 113, 113, 0.28);
+    position: relative;
+    overflow: hidden;
+    padding: 26px;
+}
+.sme-creative-reviews.is-revision {
+    --status-color: #fb923c;
+    --status-soft: rgba(249, 115, 22, 0.09);
+    --status-line: rgba(251, 146, 60, 0.28);
+}
+.sme-creative-reviews.is-rejected::before,
+.sme-creative-reviews.is-revision::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--status-color), transparent 70%);
+}
+/* Undo the gradient-text / width limits inherited from .dashboard-content */
+.sme-creative-reviews h2,
+.sme-creative-reviews h3 {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+}
+.sme-creative-reviews p {
+    max-width: none;
+}
+.is-rejected .sme-creative-reviews-heading,
+.is-revision .sme-creative-reviews-heading {
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+.is-rejected .sme-creative-eyebrow,
+.is-revision .sme-creative-eyebrow {
+    color: var(--status-color);
+}
+.is-rejected .sme-creative-total,
+.is-revision .sme-creative-total {
+    color: var(--status-color);
+    background: var(--status-soft);
+    border-color: var(--status-line);
+    font-size: 12px;
+}
+.is-rejected .sme-creative-grid,
+.is-revision .sme-creative-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 20px;
+}
+
+/* Card: image on top, details below */
+.sme-creative-card.is-rejected,
+.sme-creative-card.is-revision {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    background: linear-gradient(160deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.7));
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+.sme-creative-card.is-rejected:hover,
+.sme-creative-card.is-revision:hover {
+    border-color: var(--status-line);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+.sme-creative-reviews.is-rejected .sme-creative-thumb,
+.sme-creative-reviews.is-revision .sme-creative-thumb {
+    position: relative;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    border: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 0;
+    background: rgba(15, 23, 42, 0.8);
+}
+.sme-creative-thumb-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.sme-creative-thumb-link img {
+    transition: transform 0.35s ease;
+}
+.sme-creative-card:hover .sme-creative-thumb-link img {
+    transform: scale(1.04);
+}
+.sme-creative-card.is-rejected .sme-creative-thumb img {
+    filter: saturate(0.7);
+}
+.sme-creative-thumb-fallback {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+}
+.sme-creative-thumb-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.sme-creative-card.is-rejected .sme-creative-card-content,
+.sme-creative-card.is-revision .sme-creative-card-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 12px;
+    padding: 16px 18px 18px;
+}
+.sme-creative-card.is-rejected .sme-creative-card-topline,
+.sme-creative-card.is-revision .sme-creative-card-topline {
+    margin: 0;
+}
+.sme-creative-card.is-rejected .sme-creative-platform,
+.sme-creative-card.is-revision .sme-creative-platform {
+    padding: 3px 9px;
+    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 999px;
+}
+.sme-creative-card.is-rejected h3,
+.sme-creative-card.is-revision h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+.sme-creative-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.sme-creative-meta li {
+    min-width: 0;
+    padding: 8px 10px;
+    background: rgba(148, 163, 184, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.11);
+    border-radius: 10px;
+}
+.sme-creative-meta span {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--text-muted, #9ca3af);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.sme-creative-meta strong {
+    display: block;
+    color: var(--text-primary, #f3f4f6);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+/* Feedback callout */
+.sme-creative-card.is-rejected .sme-creative-feedback,
+.sme-creative-card.is-revision .sme-creative-feedback {
+    margin-top: auto;
+    padding: 13px 14px;
+    background: var(--status-soft);
+    border: 1px solid var(--status-line);
+    border-left: 4px solid var(--status-color);
+    border-radius: 10px;
+}
+.sme-creative-reviews.is-rejected .sme-creative-feedback { --status-color: #f87171; --status-soft: rgba(239, 68, 68, 0.09); --status-line: rgba(248, 113, 113, 0.28); }
+.sme-creative-reviews.is-revision .sme-creative-feedback { --status-color: #fb923c; --status-soft: rgba(249, 115, 22, 0.09); --status-line: rgba(251, 146, 60, 0.28); }
+.sme-creative-feedback-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.sme-creative-feedback-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    color: #0f172a;
+    background: var(--status-color);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+}
+.sme-creative-card .sme-creative-feedback-head strong {
+    display: block;
+    margin: 0;
+    color: var(--status-color);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.sme-creative-card.is-rejected .sme-creative-feedback p,
+.sme-creative-card.is-revision .sme-creative-feedback p {
+    color: #e5e7eb;
+    font-size: 12.5px;
+    line-height: 1.65;
+}
+.sme-creative-feedback.is-empty p {
+    color: var(--text-muted, #9ca3af);
+    font-style: italic;
+}
+
+/* Empty state */
+.is-rejected .sme-creative-empty,
+.is-revision .sme-creative-empty {
+    padding: 48px 20px;
+    border-color: var(--status-line);
+    background: var(--status-soft);
+}
+.is-rejected .sme-creative-empty strong,
+.is-revision .sme-creative-empty strong {
+    font-size: 15px;
+}
+.is-rejected .sme-creative-empty::before,
+.is-revision .sme-creative-empty::before {
+    content: "\2713";
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 14px;
+    color: var(--status-color);
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--status-line);
+    border-radius: 50%;
+    font-size: 20px;
+}
+@media (max-width: 480px) {
+    .sme-creative-reviews.is-rejected,
+    .sme-creative-reviews.is-revision { padding: 16px; }
+    .is-rejected .sme-creative-grid,
+    .is-revision .sme-creative-grid { gap: 14px; }
+}

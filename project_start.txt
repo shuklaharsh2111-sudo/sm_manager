@@ -1,0 +1,10 @@
+Admin
+Login with the provided credentials
+go on users tab, click add users, add the users detail
+click on companies on sidebar, click on add clients, add the clients as per the data
+when clicked on assigned, the data of the users with sme role will be displayed.
+
+
+SME
+Login with the provided credentials
+can add meeting and view your daily sop's.

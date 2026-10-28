@@ -1,0 +1,1677 @@
+/* ---------- ROOT VARIABLES ---------- */
+:root {
+    --company-bg: #0d0b18;
+    --company-panel: #151225;
+    --company-panel-light: #1c1830;
+    --company-border: rgba(255, 255, 255, 0.09);
+    --company-primary: #8b5cf6;
+    --company-primary-hover: #7c3aed;
+    --company-primary-soft: rgba(139, 92, 246, 0.14);
+    --company-text: #f4f1ff;
+    --company-muted: #a6a0bd;
+    --company-success: #34d399;
+    --company-danger: #fb7185;
+    --company-warning: #fbbf24;
+    --company-radius: 14px;
+    --company-transition: 0.2s ease;
+}
+/* ---------- PAGE WRAPPER ---------- */
+.companies-page {
+    width: 100%;
+    min-width: 0;
+    color: var(--company-text);
+    font-family: Arial, Helvetica, sans-serif;
+    box-sizing: border-box;
+}
+.companies-page *,
+.companies-page *::before,
+.companies-page *::after {
+    box-sizing: border-box;
+}
+.companies-page h1,
+.companies-page h2,
+.companies-page h3,
+.companies-page p {
+    margin-top: 0;
+}
+.companies-page button,
+.companies-page input,
+.companies-page textarea,
+.companies-page select {
+    font: inherit;
+}
+/* ---------- PAGE HEADER ---------- */
+.companies-page .page-header,
+.companies-page .companies-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+}
+.companies-page .page-title,
+.companies-page .companies-title {
+    margin: 0;
+    color: var(--company-text);
+    font-size: 27px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+.companies-page .page-subtitle,
+.companies-page .companies-subtitle {
+    margin: 7px 0 0;
+    color: var(--company-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+/* ---------- BUTTONS ---------- */
+.companies-page .btn,
+.companies-page .add-company-btn,
+.companies-page .primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 11px 17px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: var(--company-primary);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background var(--company-transition),
+        transform var(--company-transition),
+        border-color var(--company-transition);
+}
+.companies-page .btn:hover,
+.companies-page .add-company-btn:hover,
+.companies-page .primary-btn:hover {
+    background: var(--company-primary-hover);
+    transform: translateY(-1px);
+}
+.companies-page .btn:focus-visible,
+.companies-page button:focus-visible,
+.companies-page a:focus-visible {
+    outline: 2px solid #c4b5fd;
+    outline-offset: 3px;
+}
+.companies-page .secondary-btn,
+.companies-page .cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 41px;
+    padding: 10px 16px;
+    border: 1px solid var(--company-border);
+    border-radius: 9px;
+    background: #211c35;
+    color: var(--company-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--company-transition);
+}
+.companies-page .secondary-btn:hover,
+.companies-page .cancel-btn:hover {
+    background: #2c2545;
+}
+.companies-page .danger-btn {
+    background: rgba(251, 113, 133, 0.12);
+    color: #fda4af;
+    border: 1px solid rgba(251, 113, 133, 0.25);
+}
+.companies-page .danger-btn:hover {
+    background: rgba(251, 113, 133, 0.22);
+}
+/* ---------- GENERAL PANELS ---------- */
+.companies-page .company-card,
+.companies-page .content-card,
+.companies-page .companies-panel {
+    min-width: 0;
+    padding: 22px;
+    border: 1px solid var(--company-border);
+    border-radius: var(--company-radius);
+    background: var(--company-panel);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+.companies-page .section-heading {
+    margin: 0 0 18px;
+    color: var(--company-text);
+    font-size: 17px;
+    font-weight: 700;
+}
+/* ---------- ALERT MESSAGES ---------- */
+.companies-page .alert,
+.companies-page .message {
+    margin-bottom: 20px;
+    padding: 13px 15px;
+    border: 1px solid var(--company-border);
+    border-radius: 9px;
+    font-size: 13px;
+    line-height: 1.6;
+}
+.companies-page .alert-success,
+.companies-page .success-message {
+    border-color: rgba(52, 211, 153, 0.25);
+    background: rgba(52, 211, 153, 0.09);
+    color: #6ee7b7;
+}
+.companies-page .alert-error,
+.companies-page .error-message {
+    border-color: rgba(251, 113, 133, 0.25);
+    background: rgba(251, 113, 133, 0.09);
+    color: #fda4af;
+}
+.companies-page .alert-warning {
+    border-color: rgba(251, 191, 36, 0.25);
+    background: rgba(251, 191, 36, 0.09);
+    color: #fcd34d;
+}
+/* ---------- COMPANY LIST / TABLE ---------- */
+.companies-page .table-wrapper,
+.companies-page .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--company-border);
+    border-radius: 11px;
+    background: var(--company-panel);
+    -webkit-overflow-scrolling: touch;
+}
+.companies-page table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    text-align: left;
+}
+.companies-page thead {
+    background: #1e1931;
+}
+.companies-page th {
+    padding: 15px 17px;
+    color: #c9c2e3;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.companies-page td {
+    padding: 15px 17px;
+    border-top: 1px solid var(--company-border);
+    color: #ded9ef;
+    font-size: 13px;
+    vertical-align: middle;
+}
+.companies-page tbody tr {
+    transition: background var(--company-transition);
+}
+.companies-page tbody tr:hover {
+    background: rgba(139, 92, 246, 0.055);
+}
+.companies-page tbody tr:last-child td {
+    border-bottom: none;
+}
+/* ---------- COMPANY LOGOS ---------- */
+.companies-page .company-logo {
+    display: block;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    object-fit: contain;
+    padding: 5px;
+    border: 1px solid var(--company-border);
+    border-radius: 50%;
+    background: #ffffff;
+}
+.companies-page .company-logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+.companies-page .company-name {
+    color: var(--company-text);
+    font-size: 13px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.companies-page .no-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    padding: 5px;
+    border: 1px solid var(--company-border);
+    border-radius: 50%;
+    background: #211c35;
+    color: var(--company-muted);
+    font-size: 10px;
+    text-align: center;
+}
+/* ---------- STATUS BADGES ---------- */
+.companies-page .status,
+.companies-page .status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border: 1px solid var(--company-border);
+    border-radius: 30px;
+    background: #211c35;
+    color: #d8d0ef;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.companies-page .status-active,
+.companies-page .status-approved {
+    border-color: rgba(52, 211, 153, 0.22);
+    background: rgba(52, 211, 153, 0.1);
+    color: #6ee7b7;
+}
+.companies-page .status-pending {
+    border-color: rgba(251, 191, 36, 0.22);
+    background: rgba(251, 191, 36, 0.1);
+    color: #fcd34d;
+}
+.companies-page .status-inactive,
+.companies-page .status-rejected {
+    border-color: rgba(251, 113, 133, 0.22);
+    background: rgba(251, 113, 133, 0.1);
+    color: #fda4af;
+}
+/* ---------- FORM LAYOUT ---------- */
+.companies-page .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 19px;
+}
+.companies-page .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+}
+.companies-page label {
+    color: #e7e1f8;
+    font-size: 12px;
+    font-weight: 600;
+}
+.companies-page label .required {
+    color: #fb7185;
+}
+.companies-page input[type="text"],
+.companies-page input[type="email"],
+.companies-page input[type="tel"],
+.companies-page input[type="number"],
+.companies-page input[type="password"],
+.companies-page input[type="file"],
+.companies-page input[type="search"],
+.companies-page select,
+.companies-page textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 13px;
+    border: 1px solid #342d4b;
+    border-radius: 9px;
+    outline: none;
+    background: #100d1d;
+    color: var(--company-text);
+    font-size: 13px;
+    transition:
+        border-color var(--company-transition),
+        box-shadow var(--company-transition);
+}
+.companies-page input::placeholder,
+.companies-page textarea::placeholder {
+    color: #77708e;
+}
+.companies-page input:focus,
+.companies-page select:focus,
+.companies-page textarea:focus {
+    border-color: var(--company-primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+.companies-page input[type="file"] {
+    padding: 9px;
+    cursor: pointer;
+}
+.companies-page input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 6px;
+    background: #2b2343;
+    color: #e9ddff;
+    cursor: pointer;
+}
+.companies-page textarea {
+    min-height: 95px;
+    resize: vertical;
+    line-height: 1.6;
+}
+.companies-page select {
+    cursor: pointer;
+}
+.companies-page .form-help,
+.companies-page .help-text {
+    margin: 0;
+    color: var(--company-muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+/* ---------- SOP SECTION ---------- */
+.companies-page .sop-section {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--company-border);
+}
+.companies-page .sop-section h3 {
+    margin-bottom: 8px;
+    color: var(--company-text);
+    font-size: 15px;
+}
+.companies-page .sop-section p {
+    color: var(--company-muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.companies-page .sop-group {
+    margin-top: 16px;
+    padding: 15px;
+    border: 1px solid var(--company-border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.015);
+}
+.companies-page .sop-group h4 {
+    margin: 0 0 12px;
+    color: #c4b5fd;
+    font-size: 13px;
+}
+/* ---------- SME ASSIGNMENT ---------- */
+.companies-page .assignment-section {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--company-border);
+}
+.companies-page .assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.companies-page .assignment-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid var(--company-border);
+    border-radius: 8px;
+    background: #100d1d;
+    cursor: pointer;
+}
+.companies-page .assignment-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--company-primary);
+}
+.companies-page .assignment-option span {
+    color: #e7e1f8;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.companies-page .assignment-option:hover {
+    border-color: rgba(139, 92, 246, 0.45);
+}
+/* ---------- MODAL: HIDDEN BY DEFAULT ---------- */
+/*
+   Important:
+   Modal must remain hidden until JavaScript adds .is-open.
+   This prevents it from appearing when the page first loads.
+*/
+.companies-page #addCompanyModal {
+    display: none !important;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: rgba(5, 4, 12, 0.82);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+/* JavaScript adds this class when the button is clicked. */
+.companies-page #addCompanyModal.is-open {
+    display: flex !important;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+/* ---------- MODAL CONTENT ---------- */
+.companies-page #addCompanyModal .modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    max-height: calc(100vh - 48px);
+    margin: auto;
+    padding: 28px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid rgba(167, 139, 250, 0.22);
+    border-radius: 17px;
+    background: #151225;
+    color: var(--company-text);
+    box-shadow: 0 25px 90px rgba(0, 0, 0, 0.55);
+    animation: companyModalIn 0.2s ease-out;
+}
+@keyframes companyModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+.companies-page #addCompanyModal .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--company-border);
+}
+.companies-page #addCompanyModal .modal-header h2,
+.companies-page #addCompanyModal .modal-title {
+    margin: 0;
+    color: var(--company-text);
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+.companies-page #addCompanyModal .modal-header p {
+    margin: 7px 0 0;
+    color: var(--company-muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.companies-page #addCompanyModal .close-modal,
+.companies-page #closeAddCompanyModal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--company-border);
+    border-radius: 9px;
+    background: #211c35;
+    color: #d8d0ef;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background var(--company-transition),
+        color var(--company-transition);
+}
+.companies-page #addCompanyModal .close-modal:hover,
+.companies-page #closeAddCompanyModal:hover {
+    background: rgba(251, 113, 133, 0.15);
+    color: #fda4af;
+}
+.companies-page #addCompanyModal .modal-body {
+    width: 100%;
+}
+.companies-page #addCompanyModal .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--company-border);
+}
+.companies-page #addCompanyModal .modal-footer button {
+    min-width: 105px;
+}
+/* ---------- EMPTY STATE ---------- */
+.companies-page .empty-state {
+    padding: 45px 20px;
+    color: var(--company-muted);
+    text-align: center;
+}
+.companies-page .empty-state h3 {
+    margin-bottom: 8px;
+    color: var(--company-text);
+    font-size: 16px;
+}
+.companies-page .empty-state p {
+    margin-bottom: 0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+/* ---------- PAGINATION ---------- */
+.companies-page .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+.companies-page .pagination a,
+.companies-page .pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 35px;
+    min-height: 35px;
+    padding: 7px 11px;
+    border: 1px solid var(--company-border);
+    border-radius: 7px;
+    background: var(--company-panel);
+    color: #d8d0ef;
+    font-size: 12px;
+    text-decoration: none;
+}
+.companies-page .pagination .active,
+.companies-page .pagination a:hover {
+    border-color: var(--company-primary);
+    background: var(--company-primary);
+    color: #ffffff;
+}
+/* ---------- RESPONSIVE: TABLET ---------- */
+@media (max-width: 900px) {
+    .companies-page .page-title,
+    .companies-page .companies-title {
+        font-size: 24px;
+    }
+    .companies-page .company-card,
+    .companies-page .content-card,
+    .companies-page .companies-panel {
+        padding: 18px;
+    }
+    .companies-page #addCompanyModal .modal-content {
+        max-width: 620px;
+        padding: 23px;
+    }
+}
+/* ---------- RESPONSIVE: MOBILE ---------- */
+@media (max-width: 600px) {
+    .companies-page .page-header,
+    .companies-page .companies-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .companies-page .page-title,
+    .companies-page .companies-title {
+        font-size: 22px;
+    }
+    .companies-page .add-company-btn,
+    .companies-page .primary-btn {
+        width: 100%;
+    }
+    .companies-page .company-card,
+    .companies-page .content-card,
+    .companies-page .companies-panel {
+        padding: 14px;
+        border-radius: 11px;
+    }
+    .companies-page .form-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+    .companies-page #addCompanyModal {
+        align-items: flex-start;
+        padding: 12px;
+    }
+    .companies-page #addCompanyModal .modal-content {
+        max-height: calc(100vh - 24px);
+        margin: auto 0;
+        padding: 18px;
+        border-radius: 13px;
+    }
+    .companies-page #addCompanyModal .modal-header h2,
+    .companies-page #addCompanyModal .modal-title {
+        font-size: 18px;
+    }
+    .companies-page #addCompanyModal .modal-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .companies-page #addCompanyModal .modal-footer button {
+        width: 100%;
+    }
+    .companies-page .pagination {
+        justify-content: center;
+    }
+}
+/* ---------- REDUCED MOTION ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .companies-page *,
+    .companies-page *::before,
+    .companies-page *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+/* Force hide Add Company modal by default */
+#addCompanyModal {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    background: rgba(5, 4, 12, 0.82) !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+/* Show only when JavaScript adds is-open */
+#addCompanyModal.is-open {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+/* ==========================================
+   ADD COMPANY MODAL - COMPLETE STYLING
+   ========================================== */
+/* Modal overlay: hidden by default */
+#addCompanyModal {
+    display: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 24px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    background: rgba(8, 5, 20, 0.82) !important;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+/* Modal visible only when JS adds is-open */
+#addCompanyModal.is-open {
+    display: flex !important;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+/* Modal box */
+#addCompanyModal .modal-content {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    max-height: calc(100vh - 48px) !important;
+    margin: auto !important;
+    padding: 28px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background: #171329 !important;
+    color: #f5f3ff !important;
+    border: 1px solid rgba(167, 139, 250, 0.3) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    box-sizing: border-box !important;
+}
+/* All modal elements use border-box */
+#addCompanyModal *,
+#addCompanyModal *::before,
+#addCompanyModal *::after {
+    box-sizing: border-box;
+}
+/* Modal heading */
+#addCompanyModal h1,
+#addCompanyModal h2,
+#addCompanyModal h3 {
+    color: #f5f3ff !important;
+}
+#addCompanyModal h2 {
+    margin: 0 0 22px !important;
+    padding-bottom: 17px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+}
+/* Labels */
+#addCompanyModal label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    color: #ddd6fe !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+/* Inputs, select and textarea */
+#addCompanyModal input[type="text"],
+#addCompanyModal input[type="email"],
+#addCompanyModal input[type="tel"],
+#addCompanyModal input[type="number"],
+#addCompanyModal input[type="file"],
+#addCompanyModal select,
+#addCompanyModal textarea {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    margin: 0 0 17px !important;
+    padding: 12px 14px !important;
+    border: 1px solid #39314f !important;
+    border-radius: 9px !important;
+    background: #100d1d !important;
+    color: #f5f3ff !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+/* Input focus */
+#addCompanyModal input:focus,
+#addCompanyModal select:focus,
+#addCompanyModal textarea:focus {
+    border-color: #a78bfa !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
+}
+/* Placeholder */
+#addCompanyModal input::placeholder,
+#addCompanyModal textarea::placeholder {
+    color: #817995 !important;
+}
+/* Textareas */
+#addCompanyModal textarea {
+    min-height: 100px !important;
+    resize: vertical !important;
+    line-height: 1.6 !important;
+}
+/* File input */
+#addCompanyModal input[type="file"] {
+    padding: 9px !important;
+    cursor: pointer;
+}
+#addCompanyModal input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #342750;
+    color: #ffffff;
+    cursor: pointer;
+}
+/* Select dropdown */
+#addCompanyModal select {
+    cursor: pointer;
+}
+/* Form groups */
+#addCompanyModal .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 17px;
+}
+/* Two-column form layout */
+#addCompanyModal .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+/* SOP sections */
+#addCompanyModal .sop-section,
+#addCompanyModal .sop-group,
+#addCompanyModal .assignment-section {
+    margin-top: 20px !important;
+    padding: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 11px !important;
+    background: rgba(255, 255, 255, 0.025) !important;
+}
+#addCompanyModal .sop-section h3,
+#addCompanyModal .sop-group h3,
+#addCompanyModal .sop-group h4,
+#addCompanyModal .assignment-section h3 {
+    margin: 0 0 12px !important;
+    color: #c4b5fd !important;
+    font-size: 15px !important;
+}
+/* Checkbox assignment options */
+#addCompanyModal .assignment-option {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin: 8px 0 !important;
+    padding: 11px !important;
+    border: 1px solid #39314f !important;
+    border-radius: 8px !important;
+    background: #100d1d !important;
+    cursor: pointer;
+}
+#addCompanyModal .assignment-option input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 !important;
+    accent-color: #8b5cf6;
+}
+#addCompanyModal .assignment-option span {
+    color: #e9e4f8 !important;
+    font-size: 12px !important;
+}
+/* Modal footer */
+#addCompanyModal .modal-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    margin-top: 22px !important;
+    padding-top: 18px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+/* Modal buttons */
+#addCompanyModal button {
+    min-height: 42px;
+    padding: 10px 17px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+/* Submit / add button */
+#addCompanyModal button[type="submit"] {
+    background: #8b5cf6 !important;
+    color: #ffffff !important;
+}
+#addCompanyModal button[type="submit"]:hover {
+    background: #7c3aed !important;
+    transform: translateY(-1px);
+}
+/* Cancel button */
+#addCompanyModal #cancelAddCompany {
+    background: #29233c !important;
+    color: #f5f3ff !important;
+    border-color: #413755 !important;
+}
+#addCompanyModal #cancelAddCompany:hover {
+    background: #39304f !important;
+}
+/* Close button */
+#addCompanyModal #closeAddCompanyModal {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid #39314f;
+    border-radius: 9px;
+    background: #29233c;
+    color: #ffffff;
+    font-size: 21px;
+    cursor: pointer;
+}
+/* Mobile responsive */
+@media (max-width: 600px) {
+    #addCompanyModal {
+        align-items: flex-start !important;
+        padding: 12px !important;
+    }
+    #addCompanyModal .modal-content {
+        max-height: calc(100vh - 24px) !important;
+        margin: auto 0 !important;
+        padding: 19px !important;
+        border-radius: 13px !important;
+    }
+    #addCompanyModal h2 {
+        padding-right: 35px !important;
+        font-size: 19px !important;
+    }
+    #addCompanyModal .form-row {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 0 !important;
+    }
+    #addCompanyModal .modal-footer {
+        flex-direction: column-reverse !important;
+        align-items: stretch !important;
+    }
+    #addCompanyModal .modal-footer button {
+        width: 100% !important;
+    }
+}
+/* Dynamic SOP input rows */
+#addCompanyModal .sop-group {
+    margin-top: 18px;
+    padding: 17px;
+    border: 1px solid #39314f;
+    border-radius: 12px;
+    background: #100d1d;
+}
+#addCompanyModal .sop-group h4 {
+    margin: 0 0 14px;
+    color: #c4b5fd;
+    font-size: 14px;
+}
+#addCompanyModal .sop-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+#addCompanyModal .sop-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 155px 36px;
+    align-items: center;
+    gap: 9px;
+}
+#addCompanyModal .sop-row input {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #39314f;
+    border-radius: 8px;
+    background: #171329;
+    color: #f5f3ff;
+    color-scheme: dark;
+}
+#addCompanyModal .sop-row input:focus {
+    outline: none;
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.14);
+}
+#addCompanyModal .remove-sop-row {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 1px solid rgba(251, 113, 133, 0.3);
+    border-radius: 8px;
+    background: rgba(251, 113, 133, 0.1);
+    color: #fda4af;
+    font-size: 21px;
+}
+#addCompanyModal .remove-sop-row:hover {
+    background: rgba(251, 113, 133, 0.22);
+}
+#addCompanyModal .add-sop-row {
+    margin-top: 13px;
+    padding: 9px 12px;
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.1);
+    color: #c4b5fd;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+#addCompanyModal .add-sop-row:hover {
+    background: rgba(139, 92, 246, 0.2);
+}
+@media (max-width: 600px) {
+    #addCompanyModal .sop-row {
+        grid-template-columns: minmax(0, 1fr) 36px;
+    }
+    #addCompanyModal .sop-row input[type="text"] {
+        grid-column: 1 / -1;
+    }
+    #addCompanyModal .sop-row input[type="date"] {
+        grid-column: 1;
+    }
+    #addCompanyModal .sop-row .remove-sop-row {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+/* Assign SME */
+.company-sme-cell {
+    min-width: 190px;
+}
+
+.company-sme-cell .assign-sme-button {
+    display: inline-flex;
+    margin: 8px 0 0;
+    padding: 9px 13px;
+    cursor: pointer;
+}
+
+.assigned-sme-name {
+    color: #34d399;
+    font-weight: 600;
+}
+
+#assignSmeModal .modal-content {
+    width: 100%;
+    max-width: 480px;
+}
+
+#assignSmeCompanyName {
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+#assignSmeForm .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#assignSmeForm select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+}
+
+#assignSmeForm .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#assignSmeForm button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+    #assignSmeModal .modal-content {
+        width: 100%;
+        max-width: 100%;
+        padding: 16px;
+    }
+
+    #assignSmeForm .modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    #assignSmeForm .modal-footer button {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .company-sme-cell {
+        min-width: 170px;
+    }
+}
+
+/* =========================================
+   FIX: ADD COMPANY AND ASSIGN SME MODALS
+   ========================================= */
+
+#addCompanyModal,
+#assignSmeModal {
+    display: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 999999 !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 24px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(5, 4, 12, 0.82) !important;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    box-sizing: border-box !important;
+}
+
+#addCompanyModal.is-open,
+#assignSmeModal.is-open {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+#addCompanyModal .modal-content,
+#assignSmeModal .modal-content {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    max-height: calc(100vh - 48px) !important;
+    margin: auto !important;
+    padding: 28px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border: 1px solid rgba(167, 139, 250, 0.3) !important;
+    border-radius: 18px !important;
+    background: #171329 !important;
+    color: #f5f3ff !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
+    box-sizing: border-box !important;
+}
+
+#assignSmeModal .modal-content {
+    max-width: 480px !important;
+}
+
+#addCompanyModal .modal-header,
+#assignSmeModal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 22px;
+    padding-bottom: 17px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#addCompanyModal .modal-header h3,
+#assignSmeModal .modal-header h3 {
+    margin: 0;
+    color: #f5f3ff;
+    font-size: 21px;
+}
+
+#addCompanyModal .modal-close,
+#assignSmeModal .modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid #39314f;
+    border-radius: 9px;
+    background: #29233c;
+    color: #fff;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+#addCompanyModal .form-group,
+#assignSmeModal .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+#addCompanyModal label,
+#assignSmeModal label {
+    color: #ddd6fe;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#addCompanyModal input,
+#addCompanyModal select,
+#assignSmeModal input,
+#assignSmeModal select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 11px 13px;
+    border: 1px solid #39314f;
+    border-radius: 9px;
+    background: #100d1d;
+    color: #f5f3ff;
+    box-sizing: border-box;
+}
+
+#addCompanyModal small,
+#assignSmeModal small {
+    color: #a6a0bd;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+#addCompanyModal .modal-footer,
+#assignSmeModal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#addCompanyModal .modal-footer button,
+#assignSmeModal .modal-footer button {
+    min-height: 42px;
+    padding: 10px 17px;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+#assignSmeCompanyName {
+    margin-bottom: 20px;
+    color: #c4b5fd;
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+    #addCompanyModal,
+    #assignSmeModal {
+        align-items: flex-start !important;
+        padding: 12px !important;
+    }
+
+    #addCompanyModal .modal-content,
+    #assignSmeModal .modal-content {
+        max-height: calc(100vh - 24px) !important;
+        margin: auto 0 !important;
+        padding: 18px !important;
+    }
+
+    #addCompanyModal .modal-footer,
+    #assignSmeModal .modal-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    #addCompanyModal .modal-footer button,
+    #assignSmeModal .modal-footer button {
+        width: 100%;
+    }
+
+    #addCompanyModal .sop-row {
+        grid-template-columns: minmax(0, 1fr) 36px;
+    }
+
+    #addCompanyModal .sop-row input[type="text"] {
+        grid-column: 1 / -1;
+    }
+
+    #addCompanyModal .sop-row input[type="date"] {
+        grid-column: 1;
+    }
+
+    #addCompanyModal .sop-row .remove-sop-row {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+
+/* =================================================================
+   COMPANIES PAGE REFRESH (keep at end of file)
+=================================================================== */
+
+/* ---------- Header ---------- */
+.companies-page .page-header h2 {
+    margin: 0;
+    color: var(--company-text);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+.companies-page .page-header p {
+    margin: 6px 0 0;
+    color: var(--company-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+.companies-page #openAddCompanyModal {
+    background: linear-gradient(135deg, #8b5cf6, #6d5ff0);
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.28);
+}
+.companies-page #openAddCompanyModal::before {
+    content: "+";
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1;
+}
+
+/* ---------- Toolbar: stats + search ---------- */
+.companies-page .companies-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.companies-page .companies-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.companies-page .stat-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    padding: 8px 15px;
+    border: 1px solid var(--company-border);
+    border-radius: 999px;
+    background: var(--company-panel);
+    color: var(--company-muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+.companies-page .stat-chip strong {
+    color: var(--company-text);
+    font-size: 15px;
+}
+.companies-page .stat-chip--assigned strong {
+    color: #6ee7b7;
+}
+.companies-page .stat-chip--unassigned strong {
+    color: #fcd34d;
+}
+.companies-page .companies-search {
+    position: relative;
+    flex: 0 1 320px;
+    min-width: 200px;
+}
+.companies-page .companies-search svg {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    width: 16px;
+    height: 16px;
+    color: var(--company-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+.companies-page .companies-search input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 14px 10px 38px;
+    border: 1px solid var(--company-border);
+    border-radius: 10px;
+    background: var(--company-panel);
+    color: var(--company-text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.companies-page .companies-search input::placeholder {
+    color: var(--company-muted);
+}
+.companies-page .companies-search input:focus {
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+/* ---------- Table card (no forced min-width => no sideways scroll) ---------- */
+.companies-page .table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--company-border);
+    border-radius: 16px;
+    background: var(--company-panel);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.companies-page .companies-table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+}
+.companies-page .companies-table thead {
+    background: rgba(139, 92, 246, 0.09);
+}
+.companies-page .companies-table th {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--company-border);
+    color: #c4b5fd;
+    font-size: 11px;
+    letter-spacing: 0.8px;
+}
+.companies-page .companies-table td {
+    padding: 14px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    vertical-align: middle;
+}
+.companies-page .companies-table tbody tr:first-child td {
+    border-top: 0;
+}
+.companies-page .companies-table th:nth-child(1) { width: 80px; }
+.companies-page .companies-table th:nth-child(2) { width: 90px; }
+.companies-page .companies-table tbody tr[hidden] {
+    display: none !important;
+}
+.companies-page .company-id-cell {
+    color: var(--company-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+.companies-page .company-name-cell .company-name {
+    color: var(--company-text);
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* ---------- Logo / initial avatar ---------- */
+.companies-page .company-logo,
+.companies-page .no-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+}
+.companies-page .no-logo {
+    padding: 0;
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(79, 70, 229, 0.2));
+    color: #ddd6fe;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* ---------- Assigned SME cell ---------- */
+.companies-page .company-sme-cell {
+    min-width: 0;
+}
+.companies-page .assigned-sme-name,
+.companies-page .unassigned-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+.companies-page .assigned-sme-name {
+    color: #6ee7b7;
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.28);
+}
+.companies-page .unassigned-label {
+    margin-right: 10px;
+    color: #fcd34d;
+    background: rgba(251, 191, 36, 0.10);
+    border: 1px solid rgba(251, 191, 36, 0.28);
+}
+.companies-page .assigned-sme-name::before,
+.companies-page .unassigned-label::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.companies-page .company-sme-cell .assign-sme-button {
+    display: inline-flex;
+    min-height: 30px;
+    margin: 0;
+    padding: 5px 13px;
+    font-size: 12px;
+    vertical-align: middle;
+    color: #ddd6fe;
+    background: rgba(139, 92, 246, 0.14);
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    border-radius: 8px;
+}
+.companies-page .company-sme-cell .assign-sme-button:hover {
+    color: #ffffff;
+    background: #8b5cf6;
+    transform: none;
+}
+.companies-page .companies-no-results {
+    margin: 18px 0 0;
+    padding: 22px;
+    border: 1px dashed var(--company-border);
+    border-radius: 12px;
+    color: var(--company-muted);
+    font-size: 13px;
+    text-align: center;
+}
+.companies-page .companies-no-results[hidden] {
+    display: none !important;
+}
+.companies-page .companies-table .no-data {
+    padding: 36px 18px;
+    color: var(--company-muted);
+    text-align: center;
+}
+
+/* ---------- Assign SME popup buttons (were unstyled white) ---------- */
+#assignSmeModal .modal-footer .btn {
+    min-height: 42px;
+    padding: 10px 18px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+#assignSmeModal .modal-footer .btn-primary {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+#assignSmeModal .modal-footer .btn-primary:hover:not(:disabled) {
+    background: #7c3aed;
+    transform: translateY(-1px);
+}
+#assignSmeModal .modal-footer .btn-secondary {
+    background: #29233c;
+    color: #f5f3ff;
+    border-color: #413755;
+}
+#assignSmeModal .modal-footer .btn-secondary:hover {
+    background: #39304f;
+}
+#assignSmeModal .modal-footer .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+#assignSmeCompanyName {
+    display: block;
+    padding: 10px 14px;
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.10);
+    font-size: 13px;
+}
+
+/* ---------- Small screens: each company becomes a card ---------- */
+@media (max-width: 760px) {
+    .companies-page .companies-search {
+        flex: 1 1 100%;
+    }
+    .companies-page .table-container {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    .companies-page .companies-table,
+    .companies-page .companies-table tbody,
+    .companies-page .companies-table tr,
+    .companies-page .companies-table td {
+        display: block;
+        width: 100%;
+    }
+    .companies-page .companies-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+    }
+    .companies-page .companies-table tbody tr {
+        margin-bottom: 12px;
+        padding: 4px 0;
+        border: 1px solid var(--company-border);
+        border-radius: 14px;
+        background: var(--company-panel);
+    }
+    .companies-page .companies-table td,
+    .companies-page .companies-table tbody tr:first-child td {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        padding: 10px 16px;
+        border-top: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .companies-page .companies-table td:last-child {
+        border-bottom: 0;
+    }
+    .companies-page .companies-table td[data-label]::before {
+        content: attr(data-label);
+        flex: 0 0 105px;
+        color: #c4b5fd;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+    }
+    .companies-page .companies-table .no-data {
+        display: block;
+        text-align: center;
+    }
+}
+@media (max-width: 360px) {
+    .companies-page .companies-table td[data-label]::before {
+        flex-basis: 100%;
+    }
+}

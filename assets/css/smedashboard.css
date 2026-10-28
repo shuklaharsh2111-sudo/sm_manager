@@ -1,0 +1,965 @@
+:root {
+    --bg-main: #0b0f19;
+    --bg-card: rgba(17, 24, 39, 0.7);
+    --border-color: rgba(99, 102, 241, 0.2);
+    --border-hover: rgba(168, 85, 247, 0.4);
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --accent-blue: #3b82f6;
+    --accent-indigo: #6366f1;
+    --accent-purple: #a855f7;
+    --accent-violet: #8b5cf6;
+    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    --gradient-glow: 0 0 25px rgba(168, 85, 247, 0.25);
+    --error-bg: rgba(239, 68, 68, 0.1);
+    --error-border: rgba(239, 68, 68, 0.3);
+    --error-text: #f87171;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 50%;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sme-dashboard {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    padding: 2rem;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    box-sizing: border-box;
+}
+.sme-dashboard-header {
+    margin-bottom: 2.5rem;
+    animation: fadeInDown 0.6s ease-out;
+}
+.sme-dashboard-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    background: linear-gradient(to right, #ffffff, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.sme-dashboard-header p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.95rem;
+}
+.sme-companies-section {
+    animation: fadeInUp 0.6s ease-out;
+}
+.sme-section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.sme-section-heading h2 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 0 0 0.15rem 0;
+    color: var(--text-primary);
+}
+.sme-section-heading p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.85rem;
+}
+.sme-company-count {
+    background: rgba(99, 102, 241, 0.15);
+    color: #c084fc;
+    border: 1px solid var(--border-color);
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.sme-message {
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+.sme-error {
+    background-color: var(--error-bg);
+    border: 1px solid var(--error-border);
+    color: var(--error-text);
+}
+.sme-empty-state {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.sme-empty-state h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+.sme-empty-state p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+.sme-companies-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    align-items: flex-start;
+}
+.sme-company-card {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    overflow: visible;
+}
+.sme-company-card::before {
+    display: none !important;
+}
+.sme-company-card:hover {
+    transform: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+.sme-company-logo-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: var(--radius-full);
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    transition: var(--transition);
+}
+.sme-company-card:hover .sme-company-logo-circle {
+    border-color: var(--accent-purple);
+    transform: scale(1.12);
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.6), 0 0 15px rgba(99, 102, 241, 0.5);
+}
+.sme-company-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sme-company-logo-fallback {
+    font-size: 2.25rem;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.sme-company-name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 130px;
+    word-break: break-word;
+    transition: var(--transition);
+}
+.sme-company-card:hover .sme-company-name {
+    color: var(--text-primary);
+}
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@media (max-width: 768px) {
+    .sme-dashboard {
+        padding: 1rem;
+    }
+    .sme-companies-grid {
+        gap: 1.5rem;
+    }
+}
+.sme-sops-section {
+    max-width: 1050px;
+    width: 100%;
+    margin: 40px 0 0 0;
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.9), rgba(11, 15, 25, 0.98));
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-sizing: border-box;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(99, 102, 241, 0.12);
+    position: relative;
+}
+.sme-sops-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--gradient-primary);
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+.sme-sops-heading {
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 14px;
+}
+.sme-sops-heading h2 {
+    margin: 0 0 4px 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: linear-gradient(to right, #ffffff, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.sme-sops-heading p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+}
+.sme-sops-layout {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    width: 100%;
+    align-items: start;
+}
+.sme-sop-box {
+    min-width: 0;
+    width: 100%;
+    padding: 18px;
+    background: rgba(11, 15, 25, 0.65);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+    transition: var(--transition);
+}
+.sme-sop-box:hover {
+    border-color: var(--border-hover);
+}
+.sme-sop-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+.sme-sop-category-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.sme-sop-count {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    background: rgba(99, 102, 241, 0.15);
+    color: #c084fc;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    box-sizing: border-box;
+}
+.sme-sop-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.sme-sop-item {
+    padding: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow-wrap: anywhere;
+    transition: var(--transition);
+}
+.sme-sop-item:hover {
+    border-color: var(--border-hover);
+}
+.sme-sop-title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.sme-sop-company {
+    margin: 0 0 6px;
+    color: var(--accent-purple);
+    font-size: 12px;
+    font-weight: 500;
+}
+.sme-sop-description {
+    margin: 0 0 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+.sme-sop-date {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+.sme-sop-date span {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.sme-sop-empty {
+    margin: 0;
+    padding: 14px 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
+@media (max-width: 1000px) {
+    .sme-sops-layout {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 650px) {
+    .sme-sops-layout {
+        grid-template-columns: 1fr;
+    }
+}
+.sme-sops-meetings-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 24px;
+    align-items: start;
+    width: 100%;
+    margin-top: 28px;
+}
+.sme-sops-meetings-layout > .sme-sops-section,
+.sme-sops-meetings-layout > .sme-meetings-section {
+    min-width: 0;
+    margin: 0;
+}
+.sme-meetings-section {
+    padding: 28px;
+    border: 1px solid rgba(148, 163, 255, 0.16);
+    border-radius: var(--radius-lg);
+    background: #0f1524;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    position: relative;
+    box-sizing: border-box;
+}
+.sme-meetings-section::before {
+    display: none;
+}
+.sme-meetings-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 14px;
+}
+.sme-meetings-heading h2 {
+    margin: 0 0 4px;
+    color: var(--text-primary);
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #ffffff, #c084fc, #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.sme-meetings-heading p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.sme-add-meeting-btn,
+.sme-save-meeting-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 42px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--gradient-primary);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+    transition: var(--transition);
+}
+.sme-add-meeting-btn:hover,
+.sme-save-meeting-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5), 0 0 10px rgba(236, 72, 153, 0.3);
+}
+.sme-add-meeting-btn:disabled,
+.sme-save-meeting-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+.sme-meeting-form {
+    margin-bottom: 22px;
+    padding: 20px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: var(--radius-md);
+    background: rgba(11, 15, 25, 0.75);
+    backdrop-filter: blur(12px);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.sme-meeting-form[hidden] {
+    display: none !important;
+}
+.sme-meeting-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+}
+.sme-meeting-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sme-meeting-field label {
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+}
+.sme-meeting-field input,
+.sme-meeting-field select {
+    width: 100%;
+    min-height: 43px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: rgba(17, 24, 39, 0.8);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+    transition: var(--transition);
+}
+.sme-meeting-field input:focus,
+.sme-meeting-field select:focus {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25), 0 0 10px rgba(236, 72, 153, 0.15);
+    background: rgba(17, 24, 39, 0.95);
+}
+.sme-meeting-field select option {
+    background: #0b0f19;
+    color: var(--text-primary);
+}
+.sme-meeting-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+.sme-cancel-meeting-btn {
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: rgba(17, 24, 39, 0.6);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.sme-cancel-meeting-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+.sme-meeting-message {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+}
+.sme-meeting-message:empty {
+    display: none;
+    padding: 0;
+}
+.sme-meeting-message.is-success {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+}
+.sme-meeting-message.is-error {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    color: var(--error-text);
+}
+.sme-meetings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.sme-meeting-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 18px;
+    border: 1px solid rgba(148, 163, 255, 0.14);
+    border-radius: 12px;
+    background: #141b2d;
+    overflow-wrap: anywhere;
+    transition: border-color 0.2s ease, opacity 0.25s ease, transform 0.25s ease;
+    position: relative;
+}
+.sme-meeting-card:hover {
+    border-color: rgba(148, 163, 255, 0.32);
+}
+.sme-meeting-card.is-leaving {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+.sme-meeting-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+.sme-meeting-pill {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(148, 163, 255, 0.1);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.sme-meeting-pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.sme-meeting-card.meeting-upcoming .sme-meeting-pill { color: #a5b4fc; background: rgba(99, 102, 241, 0.14); }
+.sme-meeting-card.meeting-live .sme-meeting-pill { color: #fcd34d; background: rgba(234, 179, 8, 0.12); }
+.sme-meeting-card.meeting-done .sme-meeting-pill { color: #86efac; background: rgba(34, 197, 94, 0.12); }
+.sme-records-link { color: #c4b5fd; font-weight: 600; text-decoration: none; }
+.sme-records-link:hover { text-decoration: underline; }
+.sme-meeting-card-info h3 {
+    margin: 0 0 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+.sme-meeting-company {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+}
+.sme-meeting-datetime {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.sme-meeting-datetime span {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(148, 163, 255, 0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 255, 0.14);
+    font-size: 11px;
+    font-weight: 600;
+}
+.sme-meeting-empty {
+    padding: 28px 16px;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    text-align: center;
+    background: rgba(11, 15, 25, 0.4);
+}
+.sme-meeting-empty h3 {
+    margin: 0 0 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+.sme-meeting-empty p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+@media (max-width: 1000px) {
+    .sme-sops-meetings-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .sme-meetings-section {
+        padding: 16px;
+    }
+    .sme-meetings-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .sme-add-meeting-btn {
+        width: 100%;
+    }
+    .sme-meeting-form {
+        padding: 14px;
+    }
+    .sme-meeting-form-actions {
+        flex-direction: column-reverse;
+    }
+    .sme-meeting-form-actions button {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   Meeting card: title, then "Join now" (left) + attendee avatars (right)
+   ========================================================================== */
+.sme-meeting-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 2px;
+}
+.sme-join-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 34px;
+    padding: 7px 18px;
+    border-radius: 999px;
+    background: var(--gradient-primary);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: filter 0.2s ease;
+}
+.sme-join-btn:hover {
+    filter: brightness(1.12);
+}
+.sme-avatar-stack {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+.sme-avatar {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-left: -7px;
+    border: 2px solid #141b2d;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--avatar-bg, #6366f1);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    box-sizing: border-box;
+}
+.sme-avatar:first-child {
+    margin-left: 0;
+}
+.sme-avatar b {
+    font-weight: 700;
+}
+.sme-avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sme-avatar-more {
+    background: #334155;
+    color: #e2e8f0;
+}
+
+/* Expandable notes under the card */
+.sme-meeting-details {
+    border-top: 1px solid rgba(148, 163, 255, 0.14);
+    padding-top: 10px;
+}
+.sme-meeting-details summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+}
+.sme-meeting-details summary:hover {
+    color: var(--text-primary);
+}
+.sme-meeting-details-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    color: var(--text-primary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.sme-meeting-details-body h4 {
+    margin: 8px 0 2px;
+    color: var(--accent-purple);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.sme-meeting-details-body ul,
+.sme-meeting-details-body ol {
+    margin: 0;
+    padding-left: 18px;
+}
+.sme-meeting-details-body p {
+    margin: 0;
+}
+.sme-meeting-details-body li span,
+.sme-meeting-details-body p span {
+    color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Add-meeting form: Attendees / Points / Next steps / Next meeting
+   ========================================================================== */
+.sme-meeting-field label small {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+.sme-mt-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(148, 163, 255, 0.14);
+}
+.sme-mt-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.sme-mt-section-head h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.sme-mt-add,
+.sme-mt-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.sme-mt-add {
+    width: 30px;
+    height: 30px;
+    border: 1.5px solid var(--accent-purple);
+    font-size: 20px;
+    line-height: 1;
+}
+.sme-mt-add:hover:not(:disabled) {
+    background: var(--accent-purple);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+}
+.sme-mt-add:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.sme-mt-remove {
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1;
+}
+.sme-mt-remove:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+.sme-mt-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    counter-reset: mtrow;
+}
+.sme-mt-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.sme-mt-numbered > .sme-mt-row::before {
+    counter-increment: mtrow;
+    content: counter(mtrow) ".";
+    flex: none;
+    width: 20px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+}
+.sme-mt-row input,
+.sme-mt-row select,
+.sme-mt-next-grid input {
+    flex: 1 1 120px;
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: rgba(17, 24, 39, 0.8);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+    transition: var(--transition);
+}
+.sme-mt-row input:focus,
+.sme-mt-row select:focus,
+.sme-mt-next-grid input:focus {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25);
+    background: rgba(17, 24, 39, 0.95);
+}
+.sme-mt-row select option {
+    background: #0b0f19;
+    color: var(--text-primary);
+}
+.sme-mt-step input[name="step_text[]"] {
+    flex: 1 1 100%;
+}
+.sme-mt-numbered > .sme-mt-step input[name="step_text[]"] {
+    flex: 1 1 calc(100% - 30px);
+}
+.sme-mt-next-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+@media (max-width: 480px) {
+    .sme-mt-next-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ==========================================================================
+   Minutes of Meeting (MOM) box on the meeting card
+   ========================================================================== */
+.sme-mom-box {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    padding-top: 10px; border-top: 1px solid rgba(148, 163, 255, 0.14);
+    color: var(--text-secondary); font-size: 12px;
+}
+.sme-mom-badge {
+    padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    background: rgba(234, 179, 8, 0.18); color: #facc15;
+}
+.sme-mom-box.is-approved .sme-mom-badge { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+.sme-mom-rejected { flex-basis: 100%; margin: 0; color: #f87171; }
+.sme-mom-btn, .sme-mom-send {
+    min-height: 34px; padding: 7px 16px; border: 0; border-radius: 999px; cursor: pointer;
+    background: var(--gradient-primary); color: #fff; font-size: 12px; font-weight: 600;
+}
+.sme-mom-cancel {
+    min-height: 34px; padding: 7px 16px; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--text-secondary); font-size: 12px;
+    border: 1px solid rgba(148, 163, 255, 0.25);
+}
+.sme-mom-btn:disabled, .sme-mom-send:disabled { opacity: 0.6; cursor: not-allowed; }
+.sme-mom-form { flex-basis: 100%; display: flex; flex-direction: column; gap: 8px; }
+.sme-mom-form[hidden] { display: none; }
+.sme-mom-form label { color: var(--text-primary); font-weight: 600; }
+.sme-mom-form small { color: var(--text-muted); font-weight: 400; }
+.sme-mom-form textarea {
+    width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; resize: vertical;
+    border: 1px solid rgba(148, 163, 255, 0.25); background: #1e293b; color: #e2e8f0;
+    font: inherit; font-size: 13px;
+}
+.sme-mom-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ==========================================================================
+   Join only on time + meeting-details form (attendees / points)
+   ========================================================================== */
+.sme-join-btn.is-locked,
+.sme-join-btn:disabled {
+    background: rgba(148, 163, 255, 0.14);
+    color: var(--text-muted);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+.sme-mom-form .sme-mt-section { margin: 0; }

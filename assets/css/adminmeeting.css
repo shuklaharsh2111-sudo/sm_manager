@@ -1,0 +1,122 @@
+/* ==========================================================================
+   Admin > SME Meetings (card layout, dark theme)
+   ========================================================================== */
+#adminMeetingsSection {
+    --am-bg: #0b0f19;
+    --am-card: #131b2e;
+    --am-line: rgba(148, 163, 255, 0.16);
+    --am-text: #f3f4f6;
+    --am-muted: #9ca3af;
+    --am-accent: #818cf8;
+    background: var(--am-bg);
+    color: var(--am-text);
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 2rem 1.5rem;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+#adminMeetingsSection > * { max-width: 1040px; }
+
+.am-head h2 { margin: 0 0 6px; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; color: var(--am-text); }
+.am-head p { margin: 0 0 22px; max-width: 70ch; color: var(--am-muted); font-size: 0.92rem; line-height: 1.55; }
+
+/* Stats strip */
+.am-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.am-stat { padding: 14px 16px; border-radius: 12px; background: var(--am-card); border: 1px solid var(--am-line); }
+.am-stat span { display: block; margin-bottom: 6px; color: var(--am-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.am-stat strong { font-size: 1.6rem; font-weight: 700; color: var(--am-text); }
+.am-stat.is-attention strong { color: #fcd34d; }
+.am-stat.is-good strong { color: #86efac; }
+
+#meetingMessage {
+    margin: 0 0 16px; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    background: var(--am-card); border: 1px solid var(--am-line); color: var(--am-text);
+}
+#meetingMessage:empty { display: none; }
+
+/* Filter tabs */
+.am-filters { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; padding: 4px; border-radius: 12px; background: var(--am-card); border: 1px solid var(--am-line); }
+.am-filter {
+    padding: 7px 14px; border: 0; border-radius: 9px; background: transparent; color: var(--am-muted);
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s ease, color 0.2s ease;
+}
+.am-filter:hover { color: var(--am-text); }
+.am-filter.is-active { background: rgba(99, 102, 241, 0.22); color: #fff; }
+
+/* Meeting cards */
+.am-list { display: flex; flex-direction: column; gap: 12px; }
+.am-card {
+    display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; border-radius: 14px;
+    background: var(--am-card); border: 1px solid var(--am-line);
+}
+.am-card[hidden], .am-empty[hidden], .mom-row[hidden], .mom-reject-box[hidden] { display: none; }
+.am-card.needs-approval { border-color: rgba(250, 204, 21, 0.45); }
+.am-card-main { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 18px; }
+.am-card-title { min-width: 0; flex: 1 1 260px; }
+.am-card-title h3 { margin: 0 0 4px; font-size: 1.02rem; font-weight: 600; color: var(--am-text); }
+.am-card-title p { margin: 0; color: var(--am-muted); font-size: 12.5px; }
+.am-dot { margin: 0 4px; color: #4b5563; }
+.am-card-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.am-chip { padding: 5px 10px; border-radius: 8px; background: rgba(148, 163, 255, 0.08); border: 1px solid var(--am-line); color: #cbd5e1; font-size: 12px; font-weight: 600; }
+.am-status { padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.am-status-done { background: rgba(34, 197, 94, 0.14); color: #86efac; }
+.am-status-not_done { background: rgba(148, 163, 255, 0.1); color: var(--am-muted); }
+.am-link { color: #c4b5fd; font-size: 12px; font-weight: 600; text-decoration: none; }
+.am-link:hover { text-decoration: underline; }
+
+/* MOM / approval area */
+.am-mom { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding-top: 14px; border-top: 1px solid var(--am-line); }
+.mom-state { padding: 4px 11px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(148, 163, 255, 0.1); color: var(--am-muted); }
+.mom-state.mom-pending { background: rgba(250, 204, 21, 0.15); color: #fcd34d; }
+.mom-state.mom-approved { background: rgba(34, 197, 94, 0.14); color: #86efac; }
+.mom-state.mom-rejected { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
+.mom-note-shown { margin: 0; color: #fca5a5; font-size: 12px; }
+
+.mom-review {
+    flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+    padding: 14px 16px; border-radius: 12px; background: rgba(250, 204, 21, 0.07); border: 1px dashed rgba(250, 204, 21, 0.35);
+}
+.mom-review-text { flex: 1 1 280px; margin: 0; color: #e5e7eb; font-size: 13px; line-height: 1.5; }
+.mom-review-buttons { display: flex; gap: 8px; }
+.mom-approve, .mom-reject, .mom-cancel, .mom-toggle {
+    min-height: 36px; padding: 8px 18px; border-radius: 10px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: filter 0.2s ease, background 0.2s ease;
+}
+.mom-approve { border: 0; background: #16a34a; color: #fff; }
+.mom-approve:hover { filter: brightness(1.1); }
+.mom-reject { border: 1px solid rgba(248, 113, 113, 0.5); background: transparent; color: #fca5a5; }
+.mom-reject:hover { background: rgba(239, 68, 68, 0.12); }
+.mom-reject.is-solid { border: 0; background: #dc2626; color: #fff; }
+.mom-cancel, .mom-toggle { border: 1px solid var(--am-line); background: transparent; color: #cbd5e1; }
+.mom-cancel:hover, .mom-toggle:hover { background: rgba(148, 163, 255, 0.1); }
+.mom-toggle { margin-left: auto; min-height: 32px; padding: 6px 14px; font-size: 12px; }
+.mom-reject-box { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+.mom-note {
+    flex: 1 1 240px; min-height: 36px; padding: 8px 12px; border-radius: 10px; box-sizing: border-box;
+    border: 1px solid var(--am-line); background: #0f1524; color: var(--am-text); font: inherit; font-size: 13px;
+}
+.mom-note:focus { outline: none; border-color: var(--am-accent); }
+.mom-review button:disabled, .mom-review input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Expanded Minutes of Meeting */
+.mom-row { padding: 16px 18px; border-radius: 12px; background: rgba(148, 163, 255, 0.05); border: 1px solid var(--am-line); }
+.mom-doc { font-size: 13px; line-height: 1.6; color: #e5e7eb; }
+.mom-doc h4 { margin: 16px 0 6px; color: #a5b4fc; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.mom-doc p { margin: 0 0 6px; }
+.mom-doc ol, .mom-doc ul { margin: 0; padding-left: 20px; }
+.mom-doc li + li { margin-top: 4px; }
+.mom-meta { margin: 0 0 4px; color: var(--am-muted); }
+.mom-meta strong { color: var(--am-text); }
+.mom-muted { color: var(--am-muted); }
+.mom-summary { padding: 10px 12px; border-radius: 10px; background: #0f1524; }
+
+.am-empty { padding: 36px 20px; text-align: center; border-radius: 14px; border: 1px dashed var(--am-line); background: var(--am-card); }
+.am-empty h3 { margin: 0 0 4px; font-size: 1rem; color: var(--am-text); }
+.am-empty p { margin: 0; color: var(--am-muted); font-size: 13px; }
+
+@media (max-width: 720px) {
+    #adminMeetingsSection { padding: 1.25rem 1rem; }
+    .am-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mom-toggle { margin-left: 0; }
+    .mom-review-buttons, .mom-review-buttons button { width: 100%; }
+}

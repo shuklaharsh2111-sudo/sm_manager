@@ -1,0 +1,612 @@
+/* ==========================================================================
+   1. Dark Theme Variables (Blue, Purple & Violet Palette)
+   ================================================================---------- */
+:root {
+  /* Primary & Brand Accents */
+  --primary: #8b5cf6; /* Vibrant Violet */
+  --primary-hover: #7c3aed; /* Deep Violet */
+  --primary-light: rgba(139, 92, 246, 0.15);
+  --primary-glow: rgba(139, 92, 246, 0.4);
+  --accent-blue: #3b82f6; /* Electric Blue */
+  --accent-purple: #a855f7; /* Rich Purple */
+  --accent-indigo: #6366f1; /* Deep Indigo */
+  /* Surface & Background Colors */
+  --bg-main: #0b0f19; /* Deep Space Background */
+  --bg-surface: #111827; /* Dark Card/Sidebar Surface */
+  --bg-surface-glass: rgba(17, 24, 39, 0.85);
+  --bg-elevated: #1f2937; /* Hover/Active Elements */
+  /* Text Colors */
+  --text-main: #f3f4f6; /* Bright Off-White */
+  --text-muted: #9ca3af; /* Cool Grey */
+  --text-subtle: #6b7280; /* Dimmed Text */
+  /* Border & Divider Colors */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-hover: rgba(139, 92, 246, 0.4);
+  /* Layout & Sizing */
+  --sidebar-width: 280px;
+  --header-height: 80px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  /* Shadows & Glow Effects */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.7);
+  --glow-primary: 0 0 20px rgba(139, 92, 246, 0.25);
+  /* Transitions */
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* ==========================================================================
+   2. Global Reset & Base Styles
+   ================================================================---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+/* Custom Styled Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+hr {
+  border: none;
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 1.25rem 0;
+}
+/* ==========================================================================
+   3. Layout Structure
+   ================================================================---------- */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+body.sidebar-open {
+  overflow: hidden;
+}
+/* ==========================================================================
+   4. Sidebar Styling & Animations
+   ================================================================---------- */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  transition: transform var(--transition-smooth);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1.5rem;
+}
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+.brand-placeholder {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--primary));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+  animation: pulseGlow 3s infinite alternate;
+}
+.brand-details h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+.brand-details p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+/* Sidebar Profile Section */
+.sidebar-profile {
+  padding: 0 1.5rem;
+  text-align: center;
+}
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-light),
+    rgba(59, 130, 246, 0.15)
+  );
+  color: var(--primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.profile-avatar {
+  overflow: hidden;
+}
+.profile-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sidebar-profile:hover .profile-avatar {
+  transform: scale(1.08) rotate(3deg);
+  border-color: var(--primary);
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+.sidebar-profile h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.designation {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+.department-details {
+  background-color: var(--bg-elevated);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  border: 1px solid var(--border-color);
+}
+.department-details span {
+  color: var(--text-muted);
+}
+.department-details strong {
+  color: var(--text-main);
+}
+/* Sidebar Navigation Links */
+.sidebar-navigation {
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+.nav-link:hover {
+  color: var(--text-main);
+  background-color: var(--bg-elevated);
+  transform: translateX(4px);
+}
+.nav-link.active {
+  color: #ffffff;
+  background: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0.2),
+    rgba(59, 130, 246, 0.1)
+  );
+  font-weight: 600;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  box-shadow: inset 0 0 12px rgba(139, 92, 246, 0.1);
+}
+.nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 4px;
+  background: linear-gradient(to bottom, var(--primary), var(--accent-blue));
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px var(--primary);
+}
+/* Sidebar Footer & Logout */
+.sidebar-footer {
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+.logout-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  transition: all var(--transition-fast);
+}
+.logout-link:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+/* ==========================================================================
+   5. Main Content Area & Header Styles
+   ================================================================---------- */
+.main-content {
+  margin-left: var(--sidebar-width);
+  flex-grow: 1;
+  /* Flex items default to min-width:auto, so wide children (e.g. the calendar
+       platform tabs) pushed the whole area sideways. Allow it to shrink. */
+  min-width: 0;
+  max-width: calc(100% - var(--sidebar-width));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin var(--transition-smooth);
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(139, 92, 246, 0.05),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(59, 130, 246, 0.03),
+      transparent 40%
+    );
+}
+/* Dashboard Header */
+.dashboard-header {
+  height: var(--header-height);
+  background-color: var(--bg-surface-glass);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
+}
+.dashboard-header h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+.dashboard-header p {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+}
+/* Header User / Clock Widget Styling */
+.header-user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: var(--bg-elevated);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast);
+}
+.header-user:hover {
+  border-color: var(--border-color-hover);
+}
+.header-user span {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.header-user small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.header-user strong#liveClock {
+  font-size: 0.95rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--primary);
+  font-weight: 700;
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+}
+/* Dashboard Content Body Card */
+.dashboard-content {
+  padding: 2.5rem;
+  flex-grow: 1;
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.dashboard-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, #f3f4f6, var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.dashboard-content p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 600px;
+}
+/* ==========================================================================
+   6. Mobile Elements, Toggle & Backdrop
+   ================================================================---------- */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 110;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 1.25rem;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+.sidebar-toggle:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+  transform: scale(1.05);
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(3, 7, 18, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 95;
+  opacity: 0;
+  transition: opacity var(--transition-smooth);
+}
+.sidebar-backdrop.is-visible {
+  display: block;
+  opacity: 1;
+}
+/* ==========================================================================
+   7. Animations & Keyframes
+   ================================================================---------- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+  }
+}
+/* ==========================================================================
+   8. Responsive Media Queries
+   ================================================================---------- */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+  .main-content {
+    margin-left: 0;
+    max-width: 100%;
+  }
+  .sidebar-toggle {
+    display: flex;
+  }
+  .dashboard-header {
+    padding: 0 1.25rem 0 4.5rem; /* Room for mobile toggle button */
+    height: auto;
+    min-height: var(--header-height);
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  .dashboard-content {
+    padding: 1.5rem;
+  }
+}
+/* ==========================================
+   REPORTING MANAGER CARD
+========================================== */
+.sidebar-profile .reporting-manager-card {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 18px 0 15px;
+  padding: 14px;
+  border: 1px solid rgba(151, 117, 255, 0.24);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(109, 76, 214, 0.16),
+      transparent 65%
+    ),
+    linear-gradient(135deg, rgba(23, 27, 55, 0.96), rgba(13, 17, 37, 0.98));
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.sidebar-profile .reporting-manager-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(165, 139, 255, 0.55);
+  box-shadow: 0 10px 28px rgba(94, 65, 190, 0.15);
+}
+.reporting-manager-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 13px;
+  color: #ad9aff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+.reporting-manager-indicator {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #9d80ff;
+  box-shadow: 0 0 10px rgba(157, 128, 255, 0.7);
+  animation: managerPulse 2s ease-in-out infinite;
+}
+.reporting-manager-info {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.reporting-manager-avatar {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(173, 148, 255, 0.3);
+  border-radius: 11px;
+  background: linear-gradient(
+    140deg,
+    rgba(120, 79, 231, 0.3),
+    rgba(52, 95, 195, 0.2)
+  );
+  color: #c8b7ff;
+  font-size: 15px;
+}
+.reporting-manager-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.reporting-manager-text strong {
+  overflow-wrap: anywhere;
+  color: #f0edff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.reporting-manager-text a {
+  overflow-wrap: anywhere;
+  color: #a7b9f7;
+  font-size: 10px;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.reporting-manager-text a:hover {
+  color: #c6b2ff;
+  text-decoration: underline;
+}
+@keyframes managerPulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 9px rgba(157, 128, 255, 0.55);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 3px rgba(157, 128, 255, 0.2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reporting-manager-indicator {
+    animation: none;
+  }
+  .sidebar-profile .reporting-manager-card {
+    transition: none;
+  }
+}
