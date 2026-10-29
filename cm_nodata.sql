@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 29, 2026 at 07:32 AM
+-- Generation Time: Oct 29, 2026 at 11:40 AM
 -- Server version: 10.11.16-MariaDB
 -- PHP Version: 8.5.12
 
@@ -223,6 +223,25 @@ CREATE TABLE `sme_taskmaster_items` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `task_board_tasks`
+--
+
+CREATE TABLE `task_board_tasks` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `company_id` int(11) NOT NULL,
+  `task_title` varchar(255) NOT NULL,
+  `task_type` enum('Strategy/Pitch Deck','Moodboard','Shoots','CP','Content Writing','Influencer') NOT NULL,
+  `objective` enum('Brand Awareness','Lead Generation','Positioning','Others') NOT NULL,
+  `is_priority` tinyint(1) NOT NULL DEFAULT 0,
+  `created_by` int(11) NOT NULL,
+  `created_by_name` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -344,6 +363,16 @@ ALTER TABLE `sme_taskmaster_items`
   ADD KEY `idx_user_card` (`user_id`,`card`);
 
 --
+-- Indexes for table `task_board_tasks`
+--
+ALTER TABLE `task_board_tasks`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_task_company` (`company_id`),
+  ADD KEY `idx_task_creator` (`created_by`),
+  ADD KEY `idx_task_priority` (`is_priority`),
+  ADD KEY `idx_task_created` (`created_at`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -420,6 +449,12 @@ ALTER TABLE `sme_taskmaster_items`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `task_board_tasks`
+--
+ALTER TABLE `task_board_tasks`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
@@ -453,6 +488,13 @@ ALTER TABLE `invoice_items`
 ALTER TABLE `sme_company_assignments`
   ADD CONSTRAINT `fk_assignment_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_assignment_sme` FOREIGN KEY (`sme_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `task_board_tasks`
+--
+ALTER TABLE `task_board_tasks`
+  ADD CONSTRAINT `fk_task_board_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_task_board_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
