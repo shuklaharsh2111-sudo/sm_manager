@@ -14,6 +14,7 @@ if ($isDirectDashboardRequest) {
 }
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/meeting_helpers.php';
+require_once __DIR__ . '/sop_helpers.php';
 if (empty($_SESSION['meeting_csrf_token'])) {
     $_SESSION['meeting_csrf_token'] = bin2hex(
         random_bytes(32)
@@ -120,6 +121,14 @@ try {
     );
     $sopErrorMessage =
         'Unable to load your assigned SOPs. Please try again later.';
+}
+// SOPs ticked in the current day / week / month (refreshes automatically).
+$sopDone = [];
+try {
+    smeSopEnsureTable($conn);
+    $sopDone = smeSopFetchCurrentDone($conn, $userId);
+} catch (Throwable $exception) {
+    error_log('SME SOP tick load error: ' . $exception->getMessage());
 }
 $displayName = trim(
     (string) (
@@ -327,11 +336,22 @@ try {
     </section>
     <div class="sme-sops-meetings-layout">
         <!-- Assigned SOPs Section -->
-        <section class="sme-sops-section">
-            <div class="sme-sops-heading">
-                <h2>Your SOPs</h2>
-                <p>Review and track your daily, weekly, and monthly operational tasks</p>
+        <section
+            class="sme-sops-section"
+            id="smeSopsSection"
+            data-endpoint="../sme/sop_api.php"
+            data-csrf="<?= escapeSmeDashboard($_SESSION['meeting_csrf_token']) ?>">
+            <div class="sme-sops-heading sme-sops-heading-row">
+                <div>
+                    <h2>Your SOPs</h2>
+                    <p>Tick a SOP when it is done. Daily ticks refresh every day and weekly ticks every week.</p>
+                </div>
+                <a class="sme-sop-saved-link" href="sme.php?page=saved">
+                    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                    Saved
+                </a>
             </div>
+            <p class="sme-sop-toast" id="sopToast" role="status" aria-live="polite"></p>
             <div class="sme-sops-layout">
                 <?php
                 $sopCategories = [
@@ -341,13 +361,22 @@ try {
                 ];
                 ?>
                 <?php foreach ($sopCategories as $type => $categoryTitle): ?>
-                    <div class="sme-sop-box">
+                    <?php
+                    $boxTotal = count($smeSops[$type] ?? []);
+                    $boxDone = 0;
+                    foreach ($smeSops[$type] ?? [] as $countSop) {
+                        if (isset($sopDone[(int) $countSop['id']])) {
+                            $boxDone++;
+                        }
+                    }
+                    ?>
+                    <div class="sme-sop-box" data-sop-type="<?= escapeSmeDashboard($type) ?>">
                         <div class="sme-sop-box-header">
                             <h3 class="sme-sop-category-title">
                                 <?= htmlspecialchars($categoryTitle, ENT_QUOTES, 'UTF-8'); ?>
                             </h3>
-                            <span class="sme-sop-count">
-                                <?= count($smeSops[$type] ?? []); ?>
+                            <span class="sme-sop-count" title="Done / total <?= escapeSmeDashboard(smeSopPeriodLabel($type)) ?>">
+                                <span class="sme-sop-done-count"><?= $boxDone ?></span>/<?= $boxTotal ?>
                             </span>
                         </div>
                         <div class="sme-sop-list">
@@ -357,14 +386,26 @@ try {
                                 </p>
                             <?php elseif (!empty($smeSops[$type])): ?>
                                 <?php foreach ($smeSops[$type] as $sop): ?>
-                                    <article class="sme-sop-item">
-                                        <h4 class="sme-sop-title">
-                                            <?= htmlspecialchars(
-                                                $sop['sop_title'] ?? 'Untitled SOP',
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ); ?>
-                                        </h4>
+                                    <?php $isDone = isset($sopDone[(int) $sop['id']]); ?>
+                                    <article class="sme-sop-item<?= $isDone ? ' is-done' : '' ?>">
+                                        <label class="sme-sop-check">
+                                            <input
+                                                type="checkbox"
+                                                class="sme-sop-checkbox"
+                                                data-sop-id="<?= (int) $sop['id'] ?>"
+                                                aria-label="Mark SOP as done <?= escapeSmeDashboard(smeSopPeriodLabel($type)) ?>"
+                                                <?= $isDone ? 'checked' : '' ?>>
+                                            <span class="sme-sop-tick" aria-hidden="true">
+                                                <i class="fa-solid fa-check"></i>
+                                            </span>
+                                            <h4 class="sme-sop-title">
+                                                <?= htmlspecialchars(
+                                                    $sop['sop_title'] ?? 'Untitled SOP',
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ); ?>
+                                            </h4>
+                                        </label>
                                         <p class="sme-sop-company">
                                             <?= htmlspecialchars(
                                                 $sop['comp_name'] ?? 'Unknown Company',
@@ -391,6 +432,14 @@ try {
                                                 ); ?>
                                             </p>
                                         <?php endif; ?>
+                                        <p class="sme-sop-saved-note" <?= $isDone ? '' : 'hidden' ?>>
+                                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                                            Saved <?= escapeSmeDashboard(smeSopPeriodLabel($type)) ?><span class="sme-sop-saved-time"><?php
+                                                if ($isDone) {
+                                                    echo ' · ' . escapeSmeDashboard(date('h:i A', strtotime((string) $sopDone[(int) $sop['id']])));
+                                                }
+                                            ?></span>
+                                        </p>
                                     </article>
                                 <?php endforeach; ?>
                             <?php else: ?>

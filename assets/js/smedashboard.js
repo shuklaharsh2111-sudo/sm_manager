@@ -30,6 +30,117 @@ document.addEventListener("DOMContentLoaded", () => {
             card.setAttribute("aria-label", companyName);
         }
     });
+    // ---- SOP tick marks: tick = save, daily/weekly ticks refresh on their own ----
+    const sopSection = document.getElementById("smeSopsSection");
+    if (sopSection) {
+        const sopEndpoint = sopSection.dataset.endpoint;
+        const sopCsrf = sopSection.dataset.csrf || "";
+        const sopToast = document.getElementById("sopToast");
+        let sopToastTimer = null;
+
+        const showSopToast = (text, isError) => {
+            if (!sopToast) {
+                return;
+            }
+            sopToast.textContent = text;
+            sopToast.classList.toggle("is-error", Boolean(isError));
+            window.clearTimeout(sopToastTimer);
+            sopToastTimer = window.setTimeout(() => {
+                sopToast.textContent = "";
+            }, 3500);
+        };
+
+        const refreshSopCount = (box) => {
+            if (!box) {
+                return;
+            }
+            const counter = box.querySelector(".sme-sop-done-count");
+            if (counter) {
+                counter.textContent = box.querySelectorAll(
+                    ".sme-sop-checkbox:checked"
+                ).length;
+            }
+        };
+
+        const periodWord = {
+            daily: "today",
+            weekly: "this week",
+            monthly: "this month"
+        };
+
+        sopSection.addEventListener("change", async (event) => {
+            const checkbox = event.target.closest(".sme-sop-checkbox");
+            if (!checkbox || !sopEndpoint) {
+                return;
+            }
+            const item = checkbox.closest(".sme-sop-item");
+            const box = checkbox.closest(".sme-sop-box");
+            const note = item
+                ? item.querySelector(".sme-sop-saved-note")
+                : null;
+            const wantChecked = checkbox.checked;
+            const type = box ? box.dataset.sopType : "";
+
+            const body = new URLSearchParams();
+            body.set("sop_id", checkbox.dataset.sopId || "");
+            body.set("checked", wantChecked ? "1" : "0");
+            body.set("csrf_token", sopCsrf);
+
+            if (item) {
+                item.classList.add("is-busy");
+            }
+            try {
+                const response = await fetch(sopEndpoint, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded; charset=UTF-8"
+                    },
+                    body: body.toString()
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Unable to save.");
+                }
+                if (item) {
+                    item.classList.toggle("is-done", wantChecked);
+                }
+                if (note) {
+                    note.hidden = !wantChecked;
+                    const timeEl = note.querySelector(".sme-sop-saved-time");
+                    if (timeEl) {
+                        timeEl.textContent = wantChecked && data.saved_time
+                            ? " · " + data.saved_time
+                            : "";
+                    }
+                    const word = periodWord[type] || "";
+                    const textNode = Array.from(note.childNodes).find(
+                        (n) => n.nodeType === Node.TEXT_NODE &&
+                            n.textContent.trim() !== ""
+                    );
+                    if (textNode) {
+                        textNode.textContent = " Saved " + word;
+                    }
+                }
+                refreshSopCount(box);
+                showSopToast(data.message || "Saved.", false);
+            } catch (error) {
+                // Put the tick back the way it was.
+                checkbox.checked = !wantChecked;
+                showSopToast(
+                    error && error.message
+                        ? error.message
+                        : "Unable to save. Please try again.",
+                    true
+                );
+            } finally {
+                if (item) {
+                    item.classList.remove("is-busy");
+                }
+            }
+        });
+    }
     const meetingsSection = document.getElementById(
         "smeMeetingsSection"
     );

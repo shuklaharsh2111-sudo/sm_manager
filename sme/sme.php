@@ -226,6 +226,7 @@ $allowedPages = [
     'calendar'  => 'calendar.php',
     'pending'   => 'pending.php',
     'recordings' => 'recordings.php',
+    'saved' => 'saved.php',
     'monthlyreport' => 'monthlyreport.php',
     'analytics' => 'analytics.php',
     'settings'  => 'settings.php'
@@ -257,6 +258,9 @@ if (!is_file($contentFile)) {
     <?php endif; ?>
     <?php if ($currentPage === 'settings'): ?>
         <link rel="stylesheet" href="../assets/css/smesettings.css">
+    <?php endif; ?>
+    <?php if ($currentPage === 'saved'): ?>
+        <link rel="stylesheet" href="../assets/css/smesaved.css">
     <?php endif; ?>
 </head>
 <body data-clock-format="<?= e($clockFormat) ?>">
@@ -353,6 +357,12 @@ if (!is_file($contentFile)) {
                     class="nav-link <?= $currentPage === 'recordings' ? 'active' : '' ?>"
                     <?= $currentPage === 'recordings' ? 'aria-current="page"' : '' ?>>
                     Records
+                </a>
+                <a
+                    href="sme.php?page=saved"
+                    class="nav-link <?= $currentPage === 'saved' ? 'active' : '' ?>"
+                    <?= $currentPage === 'saved' ? 'aria-current="page"' : '' ?>>
+                    Saved
                 </a>
                 <a
                     href="sme.php?page=analytics"

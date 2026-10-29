@@ -1,0 +1,222 @@
+/* ==========================================================================
+   SME "Saved" page - ticked SOP history.
+   Uses the design tokens declared in sme.css (:root).
+   ========================================================================== */
+
+.sv {
+    --sv-success: #34d399;
+    max-width: 980px;
+}
+
+.sv-head {
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-content .sv p {
+    max-width: 640px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* ---------- Filter tabs ---------- */
+.sv-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.sv-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.sv-tab:hover {
+    border-color: var(--border-color-hover);
+    color: var(--text-main);
+}
+
+.sv-tab.is-active {
+    background: var(--primary-light);
+    border-color: var(--border-color-hover);
+    color: var(--text-main);
+}
+
+.sv-tab-count {
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+/* ---------- Day groups ---------- */
+.sv-day {
+    margin-bottom: 1.6rem;
+}
+
+.sv-day-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.7rem;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.sv-day-title span {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: #c084fc;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.sv-item {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.9rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: border-color 0.2s ease;
+}
+
+.sv-item:hover {
+    border-color: var(--border-color-hover);
+}
+
+.sv-item-tick {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(52, 211, 153, 0.16);
+    color: var(--sv-success);
+    font-size: 0.75rem;
+}
+
+.sv-item-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sv-item-body h4 {
+    margin: 0 0 0.2rem;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.dashboard-content .sv .sv-item-company {
+    margin: 0;
+    color: var(--accent-purple);
+    font-size: 0.8rem;
+}
+
+.sv-item-meta {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    text-align: right;
+}
+
+.sv-badge {
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.sv-badge-daily {
+    background: rgba(59, 130, 246, 0.16);
+    color: #60a5fa;
+}
+
+.sv-badge-weekly {
+    background: rgba(168, 85, 247, 0.16);
+    color: #c084fc;
+}
+
+.sv-badge-monthly {
+    background: rgba(251, 191, 36, 0.16);
+    color: #fbbf24;
+}
+
+.sv-item-period,
+.sv-item-time {
+    color: var(--text-subtle);
+    font-size: 0.75rem;
+}
+
+/* ---------- Empty state ---------- */
+.sv-empty {
+    padding: 2.5rem 1rem;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.sv-empty i {
+    margin-bottom: 0.6rem;
+    color: var(--primary);
+    font-size: 2rem;
+}
+
+.sv-empty h3 {
+    margin: 0 0 0.3rem;
+    color: var(--text-main);
+}
+
+.dashboard-content .sv .sv-empty p {
+    max-width: none;
+    margin: 0 auto;
+}
+
+.sv-empty a {
+    color: #c084fc;
+}
+
+@media (max-width: 640px) {
+    .sv-item {
+        flex-wrap: wrap;
+    }
+
+    .sv-item-meta {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        width: 100%;
+        gap: 0.6rem;
+        text-align: left;
+    }
+}
