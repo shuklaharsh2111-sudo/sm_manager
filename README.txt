@@ -13,7 +13,7 @@ Installation
 5. In the admin Creative Studio, the Reject button updates a creative to rejected; Approve and Revision continue to work.
 6. Hard-refresh the browser (Ctrl+F5) so the updated JavaScript and CSS are loaded.
 
-Notes
+Note
 - The dashboard query uses creatives.user_id = the currently signed-in SME's users.id. The existing add_creative.php saves the submitting SME's ID in that field.
 - No database migration is required: the supplied schema already includes status values approved, rejected, and revision, plus revision_reason.
 - PHP syntax and JavaScript syntax checks passed for the earlier patch. This update adds separate status grouping; a live database/browser test could not be run in this environment.
