@@ -227,4 +227,66 @@
             barRow(box, l, [{ pct: D.weeks[i] / max * 100, color: '#60a5fa' }], D.weeks[i]);
         });
     })();
+
+    /* ---------- Task SOP charts ---------- */
+    try { (function () {
+        var sEl = document.getElementById('anSopData');
+        if (!sEl) return;
+        var S;
+        try { S = JSON.parse(sEl.textContent); } catch (e) { return; }
+
+        function columns(box, rows, series, aria, emptyText) {
+            if (!box) return;
+            var max = Math.max.apply(null, rows.map(function (r) { return r.total; }).concat([0]));
+            if (max === 0) return empty(box, emptyText);
+            var step = max <= 5 ? 1 : max <= 10 ? 2 : Math.ceil(max / 5);
+            var top = Math.ceil(max / step) * step;
+            var W = 720, H = 260, L = 36, R = 10, T = 12, B = 30;
+            var iw = W - L - R, ih = H - T - B;
+            var g = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': aria }, box);
+            for (var v = 0; v <= top; v += step) {
+                var y = T + ih - v / top * ih;
+                svg('line', { x1: L, x2: W - R, y1: y, y2: y, class: 'an-grid-line' }, g);
+                svg('text', { x: L - 6, y: y + 3, 'text-anchor': 'end', class: 'an-axis' }, g).textContent = v;
+            }
+            var slot = iw / rows.length, bw = Math.min(44, slot * 0.6);
+            rows.forEach(function (row, i) {
+                var x = L + slot * i + (slot - bw) / 2, yBase = T + ih;
+                series.forEach(function (sr) {
+                    var c = row.counts[sr.key];
+                    if (!c) return;
+                    var h = c / top * ih;
+                    yBase -= h;
+                    var r = svg('rect', { x: x, y: yBase, width: bw, height: h, fill: sr.color, rx: 2 }, g);
+                    tip(r, row.label + ' · ' + sr.label + ': ' + c);
+                });
+                svg('text', { x: x + bw / 2, y: H - 10, 'text-anchor': 'middle', class: 'an-axis' }, g).textContent = row.label;
+                if (row.total) {
+                    svg('text', { x: x + bw / 2, y: T + ih - row.total / top * ih - 4, 'text-anchor': 'middle', class: 'an-axis an-axis-strong' }, g).textContent = row.total;
+                }
+            });
+        }
+
+        var cur = S.current;
+        donut($('anSopDonut'), [
+            { label: 'Done', color: '#3dd693', value: cur.done },
+            { label: 'Pending', color: '#ffc052', value: cur.pending }
+        ], cur.done + '/' + cur.total, 'done now');
+
+        columns($('anSopMonthly'), S.monthly, S.types, 'SOP ticks per month', 'No SOP ticks in this period.');
+        legend($('anSopMonthlyLegend'), S.types.map(function (t) { return { label: t.label, color: t.color }; }));
+        columns($('anSopDays'), S.days, [{ key: 'count', label: 'Ticks', color: '#8b5cf6' }], 'SOP ticks in the last 14 days', 'No SOP ticks in the last 14 days.');
+
+        var cbox = $('anSopCompanies');
+        if (cbox) {
+            if (!S.companies.length) {
+                empty(cbox, 'No company data.');
+            } else {
+                var cmax = Math.max.apply(null, S.companies.map(function (c) { return c.total; }).concat([1]));
+                S.companies.forEach(function (c) {
+                    barRow(cbox, c.label, [{ pct: c.total / cmax * 100, color: '#8b5cf6', tip: c.sops + ' SOP(s)' }], c.total);
+                });
+            }
+        }
+    })(); } catch (err) { if (window.console) console.error('SOP analytics charts failed:', err); }
 })();

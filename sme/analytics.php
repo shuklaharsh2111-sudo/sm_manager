@@ -244,6 +244,147 @@ $anData = [
 ];
 $anJson = json_encode($anData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
+/* ---------- Task SOP analytics ---------- */
+require_once __DIR__ . '/sop_helpers.php';
+smeSopTimezone();
+$anView = (($_GET['view'] ?? 'creative') === 'sop') ? 'sop' : 'creative';
+$spTypes = [
+    'daily'   => ['Daily',   '#60a5fa', 'today'],
+    'weekly'  => ['Weekly',  '#a78bfa', 'this week'],
+    'monthly' => ['Monthly', '#f472b6', 'this month'],
+];
+$spAll = [];
+$spDone = [];
+try {
+    smeSopEnsureTable($conn);
+    foreach (smeSopFetchAssigned($conn, $anUserId) as $spType => $spRows) {
+        foreach ($spRows as $spRow) {
+            if ($anCompanyFilter > 0 && (int) $spRow['company_id'] !== $anCompanyFilter) {
+                continue;
+            }
+            $spAll[(int) $spRow['id']] = $spRow + ['type' => $spType];
+        }
+    }
+    $spDone = smeSopFetchCurrentDone($conn, $anUserId);
+} catch (Throwable $e) {
+    $spAll = [];
+}
+$anSopFilter = (int) ($_GET['sop'] ?? 0);
+if (!isset($spAll[$anSopFilter])) {
+    $anSopFilter = 0; // not one of the SOPs in the current company view
+}
+$spScope = $anSopFilter > 0 ? [$anSopFilter => $spAll[$anSopFilter]] : $spAll;
+
+/* Current day / week / month progress */
+$spCur = [];
+foreach ($spTypes as $k => $_) {
+    $spCur[$k] = ['total' => 0, 'done' => 0];
+}
+foreach ($spScope as $id => $sp) {
+    $spCur[$sp['type']]['total']++;
+    if (isset($spDone[$id])) {
+        $spCur[$sp['type']]['done']++;
+    }
+}
+$spTotal = count($spScope);
+$spDoneNow = array_sum(array_column($spCur, 'done'));
+$spPendingNow = $spTotal - $spDoneNow;
+$spRate = $spTotal > 0 ? round($spDoneNow / $spTotal * 100, 1) : 0;
+
+/* Saved ticks inside the selected period */
+$spTicks = [];
+if ($spScope) {
+    $sql = 'SELECT sop_id, sop_type, period_key, completed_at FROM sme_sop_completions WHERE sme_user_id = ?';
+    $types = 'i';
+    $params = [$anUserId];
+    if ($anRangeStart !== null) {
+        $sql .= ' AND completed_at >= ?';
+        $types .= 's';
+        $params[] = $anRangeStart . ' 00:00:00';
+    }
+    $sql .= ' ORDER BY completed_at DESC';
+    $st = $conn->prepare($sql);
+    if ($st) {
+        $st->bind_param($types, ...$params);
+        if ($st->execute()) {
+            $r = $st->get_result();
+            while ($row = $r->fetch_assoc()) {
+                if (isset($spScope[(int) $row['sop_id']])) {
+                    $spTicks[] = $row;
+                }
+            }
+        }
+        $st->close();
+    }
+}
+
+$spMonthsN = $anRange > 0 ? $anRange : 12;
+$spMonthly = [];
+for ($i = $spMonthsN - 1; $i >= 0; $i--) {
+    $key = date('Y-m', strtotime(date('Y-m-01') . ' -' . $i . ' months'));
+    $spMonthly[$key] = [
+        'label' => date('M y', strtotime($key . '-01')),
+        'counts' => array_fill_keys(array_keys($spTypes), 0),
+        'total' => 0,
+    ];
+}
+$spDays = [];
+for ($i = 13; $i >= 0; $i--) {
+    $key = date('Y-m-d', strtotime('-' . $i . ' days'));
+    $spDays[$key] = ['label' => date('j M', strtotime($key)), 'counts' => ['count' => 0], 'total' => 0];
+}
+$spPerSop = [];
+$spPerCompany = [];
+foreach ($spScope as $id => $sp) {
+    $spPerSop[$id] = ['count' => 0, 'last' => null];
+    $cid = (int) $sp['company_id'];
+    $spPerCompany[$cid] ??= ['label' => (string) $sp['comp_name'], 'sops' => 0, 'total' => 0];
+    $spPerCompany[$cid]['sops']++;
+}
+foreach ($spTicks as $tk) {
+    $id = (int) $tk['sop_id'];
+    $type = $spScope[$id]['type'];
+    $cid = (int) $spScope[$id]['company_id'];
+    $spPerSop[$id]['count']++;
+    if ($spPerSop[$id]['last'] === null) {
+        $spPerSop[$id]['last'] = $tk['completed_at']; // rows are newest first
+    }
+    $spPerCompany[$cid]['total']++;
+    $m = substr((string) $tk['completed_at'], 0, 7);
+    if (isset($spMonthly[$m])) {
+        $spMonthly[$m]['counts'][$type]++;
+        $spMonthly[$m]['total']++;
+    }
+    $d = substr((string) $tk['completed_at'], 0, 10);
+    if (isset($spDays[$d])) {
+        $spDays[$d]['counts']['count']++;
+        $spDays[$d]['total']++;
+    }
+}
+$spWeekTicks = array_sum(array_map(static fn($d) => $d['total'], array_slice($spDays, -7)));
+uasort($spPerCompany, static fn($a, $b) => $b['total'] <=> $a['total']);
+
+$spData = [
+    'types' => array_map(
+        static fn($k, $v) => ['key' => $k, 'label' => $v[0], 'color' => $v[1]],
+        array_keys($spTypes),
+        array_values($spTypes)
+    ),
+    'current' => ['done' => $spDoneNow, 'pending' => $spPendingNow, 'total' => $spTotal],
+    'monthly' => array_values(array_map(static fn($m) => ['label' => $m['label'], 'counts' => $m['counts'], 'total' => $m['total']], $spMonthly)),
+    'days' => array_values(array_map(static fn($m) => ['label' => $m['label'], 'counts' => $m['counts'], 'total' => $m['total']], $spDays)),
+    'companies' => array_values(array_map(static fn($c) => ['label' => $c['label'], 'total' => $c['total'], 'sops' => $c['sops']], $spPerCompany)),
+];
+$spJson = json_encode($spData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+$spKpis = [
+    ['SOPs in View', $spTotal, '#8b5cf6', $spCur['daily']['total'] . ' daily · ' . $spCur['weekly']['total'] . ' weekly · ' . $spCur['monthly']['total'] . ' monthly'],
+    ['Done Now', $spDoneNow, '#3dd693', 'Ticked for the current day / week / month'],
+    ['Pending Now', $spPendingNow, '#ffc052', 'Still to tick'],
+    ['Completion', $spRate . '%', '#a78bfa', 'Of current SOPs ticked'],
+    ['Ticks Saved', count($spTicks), '#60a5fa', 'In the selected period'],
+    ['Last 7 Days', $spWeekTicks, '#fb923c', 'Ticks saved'],
+];
+
 $anRangeLabels = [3 => 'Last 3 months', 6 => 'Last 6 months', 12 => 'Last 12 months', 0 => 'All time'];
 $anKpis = [
     ['Total Creatives', $total, '#8b5cf6', 'All creatives in view'],
@@ -255,22 +396,40 @@ $anKpis = [
     ['Next 30 Days', $upcoming30, '#60a5fa', 'Scheduled creatives'],
 ];
 ?>
-<link rel="stylesheet" href="../assets/css/smeanalytics.css">
+<link rel="stylesheet" href="../assets/css/smeanalytics.css?v=<?= (int) @filemtime(__DIR__ . '/../assets/css/smeanalytics.css') ?>">
 
 <section class="an-page" id="smeAnalytics">
     <div class="an-header">
         <div>
             <div class="an-eyebrow"><span class="an-dot"></span>SME WORKSPACE</div>
-            <h2>Creative <span>Analytics</span></h2>
-            <p>Track approvals, redo requests, delays and workload across your assigned companies.</p>
+            <h2 id="anTitle"><?= $anView === 'sop' ? 'Task SOP' : 'Creative' ?> <span>Analytics</span></h2>
+            <p id="anSub"><?= $anView === 'sop'
+                ? 'Track daily, weekly and monthly SOP completion across your assigned companies.'
+                : 'Track approvals, redo requests, delays and workload across your assigned companies.' ?></p>
         </div>
         <form class="an-filters" method="get" action="sme.php">
             <input type="hidden" name="page" value="analytics">
+            <input type="hidden" name="view" id="anViewInput" value="<?= anE($anView) ?>">
             <label>Company
                 <select name="company" onchange="this.form.submit()">
                     <option value="0">All companies</option>
                     <?php foreach ($anCompanies as $cid => $cname): ?>
                         <option value="<?= (int) $cid ?>" <?= $cid === $anCompanyFilter ? 'selected' : '' ?>><?= anE($cname) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label data-an-only="sop" <?= $anView === 'sop' ? '' : 'hidden' ?>>Task SOP
+                <select name="sop" onchange="this.form.submit()">
+                    <option value="0">All SOPs (<?= count($spAll) ?>)</option>
+                    <?php foreach ($spTypes as $spK => $spT): ?>
+                        <?php $spGroup = array_filter($spAll, static fn($x) => $x['type'] === $spK); ?>
+                        <?php if ($spGroup): ?>
+                            <optgroup label="<?= anE($spT[0]) ?> SOPs">
+                                <?php foreach ($spGroup as $spId => $spX): ?>
+                                    <option value="<?= (int) $spId ?>" <?= $spId === $anSopFilter ? 'selected' : '' ?>><?= anE(($spX['sop_title'] ?: 'Untitled SOP') . ' — ' . $spX['comp_name']) ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </select>
             </label>
@@ -288,6 +447,14 @@ $anKpis = [
     <?php if (!$anCompanies): ?>
         <p class="an-message">No companies are assigned to you yet, so there is nothing to analyse.</p>
     <?php else: ?>
+
+    <!-- Full-page switch: Creative analytics <-> Task SOP analytics -->
+    <div class="an-switch" role="tablist" aria-label="Analytics type">
+        <button type="button" role="tab" class="an-switch-btn<?= $anView === 'creative' ? ' is-active' : '' ?>" data-an-mode="creative" aria-selected="<?= $anView === 'creative' ? 'true' : 'false' ?>" aria-controls="anCreativeView"><i class="fa-solid fa-palette" aria-hidden="true"></i> Creative Analytics</button>
+        <button type="button" role="tab" class="an-switch-btn<?= $anView === 'sop' ? ' is-active' : '' ?>" data-an-mode="sop" aria-selected="<?= $anView === 'sop' ? 'true' : 'false' ?>" aria-controls="anSopView"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Task SOP Analytics</button>
+    </div>
+
+    <div id="anCreativeView" role="tabpanel" <?= $anView === 'creative' ? '' : 'hidden' ?>>
 
     <!-- KPI cards -->
     <div class="an-kpis">
@@ -377,7 +544,149 @@ $anKpis = [
         </article>
     </div>
 
+    </div><!-- /#anCreativeView -->
+
+    <!-- ================= TASK SOP ANALYTICS ================= -->
+    <div id="anSopView" role="tabpanel" <?= $anView === 'sop' ? '' : 'hidden' ?>>
+        <?php if (!$spAll): ?>
+            <p class="an-message">No SOPs are assigned to <?= $anCompanyFilter > 0 ? 'this company' : 'your companies' ?> yet. SOPs added by the admin will appear here.</p>
+        <?php else: ?>
+        <div class="an-kpis">
+            <?php foreach ($spKpis as [$label, $value, $color, $sub]): ?>
+                <div class="an-kpi" style="--kc:<?= anE($color) ?>">
+                    <span class="an-kpi-label"><?= anE($label) ?></span>
+                    <strong><?= anE($value) ?></strong>
+                    <small><?= anE($sub) ?></small>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="an-grid">
+            <article class="an-card">
+                <h3>Done vs Pending <small>current day / week / month</small></h3>
+                <div class="an-donut-wrap">
+                    <div class="an-donut" id="anSopDonut"></div>
+                    <ul class="an-legend">
+                        <li><span class="an-sw" style="background:#3dd693"></span><span class="an-lg-name">Done</span><strong><?= $spDoneNow ?></strong></li>
+                        <li><span class="an-sw" style="background:#ffc052"></span><span class="an-lg-name">Pending</span><strong><?= $spPendingNow ?></strong></li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="an-card">
+                <h3>Progress by Frequency</h3>
+                <div class="an-rates">
+                    <?php foreach ($spTypes as $k => $t):
+                        $c = $spCur[$k];
+                        $pct = $c['total'] > 0 ? round($c['done'] / $c['total'] * 100) : 0; ?>
+                        <div class="an-rate">
+                            <div class="an-rate-top"><span><?= anE($t[0]) ?> <small class="an-muted">(<?= anE($t[2]) ?>)</small></span><strong style="color:<?= anE($t[1]) ?>"><?= $c['done'] ?>/<?= $c['total'] ?></strong></div>
+                            <div class="an-track"><span style="width:<?= $pct ?>%;background:<?= anE($t[1]) ?>"></span></div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </article>
+
+            <article class="an-card an-wide">
+                <h3>SOP Ticks per Month <small>by frequency</small></h3>
+                <div class="an-chart" id="anSopMonthly"></div>
+                <ul class="an-legend an-legend-inline" id="anSopMonthlyLegend"></ul>
+            </article>
+
+            <article class="an-card">
+                <h3>Last 14 Days <small>ticks saved per day</small></h3>
+                <div class="an-chart" id="anSopDays"></div>
+            </article>
+
+            <article class="an-card">
+                <h3>Ticks by Company</h3>
+                <div id="anSopCompanies" class="an-bars"></div>
+            </article>
+
+            <article class="an-card an-wide">
+                <h3><?= $anSopFilter > 0 ? 'Selected SOP' : 'All SOPs' ?> <small><?= count($spScope) ?> in view</small></h3>
+                <ul class="an-list an-list-scroll">
+                    <?php foreach ($spScope as $id => $sp):
+                        $isDone = isset($spDone[$id]);
+                        $t = $spTypes[$sp['type']];
+                        $last = $spPerSop[$id]['last']; ?>
+                        <li>
+                            <div>
+                                <span class="an-list-title"><?= anE($sp['sop_title'] ?: 'Untitled SOP') ?></span>
+                                <span class="an-list-meta">
+                                    <?= anE($sp['comp_name']) ?> · <span style="color:<?= anE($t[1]) ?>"><?= anE($t[0]) ?></span>
+                                    · <?= (int) $spPerSop[$id]['count'] ?> tick<?= $spPerSop[$id]['count'] === 1 ? '' : 's' ?>
+                                    <?= $last ? ' · last ' . anE(date('d M Y, h:i A', strtotime((string) $last))) : ' · never ticked in this period' ?>
+                                </span>
+                            </div>
+                            <span class="an-badge <?= $isDone ? 'an-badge-done' : 'an-badge-pending' ?>"><?= $isDone ? 'Done ' . anE($t[2]) : 'Pending ' . anE($t[2]) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </article>
+
+            <?php if ($anSopFilter > 0): ?>
+            <article class="an-card an-wide">
+                <h3>Completion History <small><?= anE($spScope[$anSopFilter]['sop_title'] ?: 'Untitled SOP') ?></small></h3>
+                <?php if (!$spTicks): ?>
+                    <p class="an-empty">This SOP has not been ticked in the selected period.</p>
+                <?php else: ?>
+                    <ul class="an-list an-list-scroll">
+                        <?php foreach (array_slice($spTicks, 0, 30) as $tk): ?>
+                            <li>
+                                <div><span class="an-list-title"><?= anE(smeSopPeriodText((string) $tk['sop_type'], (string) $tk['period_key'])) ?></span></div>
+                                <span class="an-list-meta">Saved <?= anE(date('d M Y, h:i A', strtotime((string) $tk['completed_at']))) ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if (count($spTicks) > 30): ?><p class="an-more">Showing the latest 30 of <?= count($spTicks) ?> ticks.</p><?php endif; ?>
+                <?php endif; ?>
+            </article>
+            <?php endif; ?>
+        </div>
+        <script type="application/json" id="anSopData"><?= $spJson ?></script>
+        <?php endif; ?>
+    </div><!-- /#anSopView -->
+
+    <script>
+    /* Creative <-> Task SOP switch. Inline on purpose: works even if cached JS is stale. */
+    (function () {
+        var root = document.getElementById('smeAnalytics');
+        if (!root) return;
+        var titles = {
+            creative: ['Creative', 'Track approvals, redo requests, delays and workload across your assigned companies.'],
+            sop: ['Task SOP', 'Track daily, weekly and monthly SOP completion across your assigned companies.']
+        };
+        function setMode(mode) {
+            var cv = document.getElementById('anCreativeView'), sv = document.getElementById('anSopView');
+            if (!cv || !sv) return;
+            cv.hidden = mode !== 'creative';
+            sv.hidden = mode !== 'sop';
+            root.querySelectorAll('[data-an-mode]').forEach(function (b) {
+                var on = b.getAttribute('data-an-mode') === mode;
+                b.classList.toggle('is-active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            var t = document.getElementById('anTitle'), sub = document.getElementById('anSub'), vi = document.getElementById('anViewInput');
+            if (t) t.innerHTML = titles[mode][0] + ' <span>Analytics</span>';
+            if (sub) sub.textContent = titles[mode][1];
+            if (vi) vi.value = mode;
+            root.querySelectorAll('[data-an-only]').forEach(function (n) {
+                n.hidden = n.getAttribute('data-an-only') !== mode;
+            });
+            try {
+                var u = new URL(window.location.href);
+                u.searchParams.set('view', mode);
+                window.history.replaceState(null, '', u.toString());
+            } catch (e) {}
+        }
+        root.addEventListener('click', function (ev) {
+            var b = ev.target.closest ? ev.target.closest('[data-an-mode]') : null;
+            if (b && root.contains(b)) { ev.preventDefault(); setMode(b.getAttribute('data-an-mode')); }
+        });
+    })();
+    </script>
     <script type="application/json" id="anData"><?= $anJson ?></script>
-    <script src="../assets/js/smeanalytics.js" defer></script>
+    <script src="../assets/js/smeanalytics.js?v=<?= (int) @filemtime(__DIR__ . '/../assets/js/smeanalytics.js') ?>" defer></script>
     <?php endif; ?>
 </section>
