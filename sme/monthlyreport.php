@@ -12,6 +12,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+date_default_timezone_set('Asia/Kolkata');
+
 if (empty($_SESSION['user_id'])) {
     if (isset($_GET['report_api'])) {
         http_response_code(401);
@@ -188,7 +190,9 @@ function mrBuildReport(
         'pending' => 0,
         'revision' => 0,
         'rejected' => 0,
-        'draft' => 0
+        'draft' => 0,
+        'delays' => 0,
+        'overdue' => 0
     ];
 
     $stats = $emptyStats;
@@ -218,7 +222,9 @@ function mrBuildReport(
                     COALESCE(SUM(status = 'pending'), 0) AS pending,
                     COALESCE(SUM(status = 'revision'), 0) AS revision,
                     COALESCE(SUM(status = 'rejected'), 0) AS rejected,
-                    COALESCE(SUM(status = 'draft'), 0) AS draft
+                    COALESCE(SUM(status = 'draft'), 0) AS draft,
+                        COALESCE(SUM(status <> 'draft' AND DATE(created_at) > creative_date), 0) AS delays,
+                        COALESCE(SUM(creative_date < CURDATE() AND status IN ('pending', 'revision')), 0) AS overdue
                  FROM creatives
                  WHERE company_id IN ($placeholders)
                    AND creative_date >= ?
@@ -241,7 +247,9 @@ function mrBuildReport(
                     COALESCE(SUM(status = 'pending'), 0) AS pending,
                     COALESCE(SUM(status = 'revision'), 0) AS revision,
                     COALESCE(SUM(status = 'rejected'), 0) AS rejected,
-                    COALESCE(SUM(status = 'draft'), 0) AS draft
+                    COALESCE(SUM(status = 'draft'), 0) AS draft,
+                        COALESCE(SUM(status <> 'draft' AND DATE(created_at) > creative_date), 0) AS delays,
+                        COALESCE(SUM(creative_date < CURDATE() AND status IN ('pending', 'revision')), 0) AS overdue
                  FROM creatives
                  WHERE company_id IN ($placeholders)
                    AND creative_date >= ?
@@ -264,7 +272,9 @@ function mrBuildReport(
                 COALESCE(SUM(cr.status = 'pending'), 0) AS pending,
                 COALESCE(SUM(cr.status = 'revision'), 0) AS revision,
                 COALESCE(SUM(cr.status = 'rejected'), 0) AS rejected,
-                COALESCE(SUM(cr.status = 'draft'), 0) AS draft
+                COALESCE(SUM(cr.status = 'draft'), 0) AS draft,
+                COALESCE(SUM(cr.status <> 'draft' AND DATE(cr.created_at) > cr.creative_date), 0) AS delays,
+                COALESCE(SUM(cr.creative_date < CURDATE() AND cr.status IN ('pending', 'revision')), 0) AS overdue
              FROM companies c
              INNER JOIN sme_company_assignments a
                 ON a.company_id = c.id
@@ -291,7 +301,9 @@ function mrBuildReport(
                 COALESCE(SUM(status = 'pending'), 0) AS pending,
                 COALESCE(SUM(status = 'revision'), 0) AS revision,
                 COALESCE(SUM(status = 'rejected'), 0) AS rejected,
-                COALESCE(SUM(status = 'draft'), 0) AS draft
+                COALESCE(SUM(status = 'draft'), 0) AS draft,
+                    COALESCE(SUM(status <> 'draft' AND DATE(created_at) > creative_date), 0) AS delays,
+                    COALESCE(SUM(creative_date < CURDATE() AND status IN ('pending', 'revision')), 0) AS overdue
              FROM creatives
              WHERE company_id IN ($placeholders)
                AND creative_date >= ?
@@ -303,7 +315,7 @@ function mrBuildReport(
         );
 
         /*
-         * Recent creatives. The latest 10 by creative date.
+         * Every creative of the month (capped at 300 rows), with timing flags.
          */
         $recentCreatives = mrFetchAll(
             $conn,
@@ -313,14 +325,18 @@ function mrBuildReport(
                 cr.platform,
                 cr.status,
                 cr.creative_date,
-                c.comp_name
+                cr.created_at,
+                cr.revision_reason,
+                c.comp_name,
+                (cr.status <> 'draft' AND DATE(cr.created_at) > cr.creative_date) AS is_delayed,
+                (cr.creative_date < CURDATE() AND cr.status IN ('pending', 'revision')) AS is_overdue
              FROM creatives cr
              INNER JOIN companies c ON c.id = cr.company_id
              WHERE cr.company_id IN ($placeholders)
                AND cr.creative_date >= ?
                AND cr.creative_date < ?
-             ORDER BY cr.creative_date DESC, cr.id DESC
-             LIMIT 10",
+             ORDER BY cr.creative_date ASC, cr.id ASC
+             LIMIT 300",
             $companyTypes . 'ss',
             array_merge($companyIds, [$startDate, $endDate])
         );
@@ -423,6 +439,100 @@ function mrBuildReport(
         );
     }
 
+    /*
+     * SOP ticks saved during the month (table is created on first use by
+     * the dashboard, so it may not exist yet).
+     */
+    $sopDone = null;
+
+    try {
+        $tick = mrFetchOne(
+            $conn,
+            "SELECT COUNT(*) AS n
+             FROM sme_sop_completions
+             WHERE sme_user_id = ?
+               AND completed_at >= ?
+               AND completed_at < ?",
+            'iss',
+            [$userId, $startDate, $endDate]
+        );
+        $sopDone = (int) ($tick['n'] ?? 0);
+    } catch (Throwable $e) {
+        $sopDone = null;
+    }
+
+    /*
+     * Individual meetings of the month.
+     */
+    $meetingList = [];
+
+    if ($companyIds) {
+        $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
+
+        $meetingList = mrFetchAll(
+            $conn,
+            "SELECT
+                m.meeting_date,
+                m.meeting_time,
+                m.subject,
+                m.meeting_status,
+                m.mom_status,
+                c.comp_name
+             FROM sme_meetings m
+             INNER JOIN companies c ON c.id = m.company_id
+             WHERE m.sme_user_id = ?
+               AND m.company_id IN ($placeholders)
+               AND m.meeting_date >= ?
+               AND m.meeting_date < ?
+             ORDER BY m.meeting_date ASC, m.meeting_time ASC
+             LIMIT 200",
+            'i' . str_repeat('i', count($companyIds)) . 'ss',
+            array_merge([$userId], $companyIds, [$startDate, $endDate])
+        );
+    }
+
+    /*
+     * Health rules (same as SME Company Health):
+     *   Healthy  : below the At Risk limits
+     *   At Risk  : 2+ delays, 4+ revisions, 2+ rejections or 2+ overdue
+     *   Critical : 3+ delays, 5+ revisions, 3+ rejections or 3+ overdue
+     */
+    $healthOf = static function (array $row): array {
+        $nonDraft = (int) ($row['total'] ?? 0) - (int) ($row['draft'] ?? 0);
+        $d = (int) ($row['delays'] ?? 0);
+        $v = (int) ($row['revision'] ?? 0);
+        $r = (int) ($row['rejected'] ?? 0);
+        $o = (int) ($row['overdue'] ?? 0);
+
+        if ($nonDraft <= 0) {
+            return ['nodata', 'No data'];
+        }
+        if ($d >= 3 || $v >= 5 || $r >= 3 || $o >= 3) {
+            return ['critical', 'Critical'];
+        }
+        if ($d >= 2 || $v >= 4 || $r >= 2 || $o >= 2) {
+            return ['risk', 'At Risk'];
+        }
+        return ['healthy', 'Healthy'];
+    };
+
+    foreach ($companyReports as &$companyRow) {
+        [$companyRow['health'], $companyRow['health_label']] = $healthOf($companyRow);
+    }
+    unset($companyRow);
+
+    [$overallHealth, $overallHealthLabel] = $healthOf($stats);
+
+    /*
+     * SME details for the report header.
+     */
+    $smeRow = mrFetchOne(
+        $conn,
+        "SELECT fullname, email, reporting_manager FROM users WHERE id = ? LIMIT 1",
+        'i',
+        [$userId]
+    );
+
     $total = (int) $stats['total'];
     $approved = (int) $stats['approved'];
     $previousTotal = (int) $previousStats['total'];
@@ -444,6 +554,20 @@ function mrBuildReport(
 
     return [
         'month' => $monthLabel,
+        'period_text' => date('d M Y', strtotime($startDate))
+            . ' – ' . date('d M Y', strtotime($endDate . ' -1 day')),
+        'previous_month' => date('F Y', strtotime($previousStart)),
+        'generated_at' => date('d M Y, h:i A'),
+        'sme_name' => (string) ($smeRow['fullname'] ?? ''),
+        'sme_email' => (string) ($smeRow['email'] ?? ''),
+        // Same values the SME sidebar shows (sme.php): there is no position column in `users`.
+        'sme_position' => 'Social Media Executive (SME)',
+        'sme_department' => 'Social Media',
+        'reporting_manager' => trim((string) ($smeRow['reporting_manager'] ?? '')),
+        'overall_health' => $overallHealth,
+        'overall_health_label' => $overallHealthLabel,
+        'sop_done' => $sopDone,
+        'meeting_list' => $meetingList,
         'start_date' => $startDate,
         'end_date' => $endDate,
         'stats' => $stats,
@@ -510,9 +634,9 @@ function mrEscape($value): string
 }
 ?>
 
-<link rel="stylesheet" href="css/smemonthrep.css">
+<link rel="stylesheet" href="css/smemonthrep.css?v=<?= (int) @filemtime(__DIR__ . '/css/smemonthrep.css') ?>">
 
-<section class="mr-page" id="smeMonthlyReports" data-report-url="<?= mrEscape(basename(__FILE__)) ?>" >
+<section class="mr-page" id="smeMonthlyReports" data-report-url="<?= mrEscape(basename(__FILE__)) ?>" data-css-url="css/smemonthrep.css?v=<?= (int) @filemtime(__DIR__ . '/css/smemonthrep.css') ?>">
     <div class="mr-heading">
         <div>
             <span class="mr-eyebrow">PERFORMANCE ANALYTICS</span>
@@ -523,17 +647,9 @@ function mrEscape($value): string
 
         <div class="mr-toolbar">
             <label for="mrMonth">Reporting month</label>
-            <input
-                type="month"
-                id="mrMonth"
-                value="<?= mrEscape($requestedMonth) ?>"
-            >
-            <button type="button" id="mrRefresh" class="mr-btn">
-                Refresh
-            </button>
-            <button type="button" id="mrPrint" class="mr-btn mr-btn-light">
-                Print Report
-            </button>
+            <input type="month" id="mrMonth" value="<?= mrEscape($requestedMonth) ?>">
+            <button type="button" id="mrRefresh" class="mr-btn">Refresh</button>
+            <button type="button" id="mrPrint" class="mr-btn mr-btn-light">Print / Save PDF</button>
         </div>
     </div>
 
@@ -542,146 +658,235 @@ function mrEscape($value): string
     </div>
 
     <div id="mrReportContent" hidden>
-        <div class="mr-report-meta">
-            <span id="mrPeriodLabel"></span>
-            <span id="mrCompanyCount"></span>
-        </div>
+    <article class="mr-doc" id="mrDoc">
 
-        <div class="mr-stats-grid">
-            <article class="mr-stat-card">
-                <span>Total Creatives</span>
-                <strong id="mrTotal">0</strong>
-                <small id="mrTotalChange">Previous month comparison</small>
-            </article>
-
-            <article class="mr-stat-card mr-stat-approved">
-                <span>Approved</span>
-                <strong id="mrApproved">0</strong>
-                <small id="mrApprovalRate">0% approval rate</small>
-            </article>
-
-            <article class="mr-stat-card mr-stat-pending">
-                <span>Pending Review</span>
-                <strong id="mrPending">0</strong>
-                <small>Awaiting a final decision</small>
-            </article>
-
-            <article class="mr-stat-card mr-stat-revision">
-                <span>Revision Required</span>
-                <strong id="mrRevision">0</strong>
-                <small>Creatives requiring changes</small>
-            </article>
-
-            <article class="mr-stat-card mr-stat-rejected">
-                <span>Rejected</span>
-                <strong id="mrRejected">0</strong>
-                <small>Rejected creatives</small>
-            </article>
-
-            <article class="mr-stat-card">
-                <span>Drafts</span>
-                <strong id="mrDraft">0</strong>
-                <small>Unfinalized creatives</small>
-            </article>
-        </div>
-
-        <div class="mr-section">
-            <div class="mr-section-heading">
-                <div>
-                    <h3>Company-wise Performance</h3>
-                    <p>Results for companies assigned to your SME account.</p>
+        <!-- Document header -->
+        <header class="mr-doc-head">
+            <div class="mr-doc-top">
+                <div class="mr-doc-brand">
+                    <img src="../assets/images/company-logo.png"
+                         alt="Unstoppable - Beyond the Blueprint"
+                         class="mr-doc-logo" width="418" height="97"
+                         onerror="this.style.display='none'">
                 </div>
+                <span id="mrOverallHealth" class="mr-health"></span>
+            </div>
+
+            <span class="mr-doc-kicker">SME PERFORMANCE REPORT</span>
+            <h1 class="mr-doc-title">Monthly Report</h1>
+            <p class="mr-doc-subtitle" id="mrPeriodLabel"></p>
+
+            <dl class="mr-meta-grid">
+                <div><dt>Prepared for</dt><dd id="mrSmeName">-</dd></div>
+                <div><dt>Position</dt><dd id="mrSmePosition">-</dd></div>
+                <div><dt>Department</dt><dd id="mrSmeDepartment">-</dd></div>
+                <div><dt>Email</dt><dd id="mrSmeEmail">-</dd></div>
+                <div><dt>Reporting manager</dt><dd id="mrManagerName">-</dd></div>
+                <div><dt>Assigned companies</dt><dd id="mrCompanyCount">-</dd></div>
+                <div><dt>Reporting period</dt><dd id="mrPeriodRange">-</dd></div>
+                <div><dt>Compared with</dt><dd id="mrPrevLabel">-</dd></div>
+                <div><dt>Generated on</dt><dd id="mrGeneratedAt">-</dd></div>
+            </dl>
+        </header>
+
+        <!-- 01 Executive summary -->
+        <section class="mr-section">
+            <div class="mr-section-heading">
+                <h3>Executive Summary</h3>
+                <p>The month at a glance.</p>
+            </div>
+
+            <p class="mr-lead" id="mrNarrative"></p>
+
+            <div class="mr-stats-grid">
+                <article class="mr-stat-card">
+                    <span>Total Creatives</span>
+                    <strong id="mrTotal">0</strong>
+                    <small id="mrTotalChange">Previous month comparison</small>
+                </article>
+                <article class="mr-stat-card mr-stat-approved">
+                    <span>Approved</span>
+                    <strong id="mrApproved">0</strong>
+                    <small id="mrApprovalRate">0% approval rate</small>
+                </article>
+                <article class="mr-stat-card mr-stat-pending">
+                    <span>Pending Review</span>
+                    <strong id="mrPending">0</strong>
+                    <small>Awaiting a final decision</small>
+                </article>
+                <article class="mr-stat-card mr-stat-revision">
+                    <span>Revision</span>
+                    <strong id="mrRevision">0</strong>
+                    <small>Creatives requiring changes</small>
+                </article>
+                <article class="mr-stat-card mr-stat-rejected">
+                    <span>Rejected</span>
+                    <strong id="mrRejected">0</strong>
+                    <small>Rejected creatives</small>
+                </article>
+                <article class="mr-stat-card mr-stat-delays">
+                    <span>Delays</span>
+                    <strong id="mrDelays">0</strong>
+                    <small>Submitted after the creative date</small>
+                </article>
+                <article class="mr-stat-card mr-stat-overdue">
+                    <span>Overdue</span>
+                    <strong id="mrOverdue">0</strong>
+                    <small>Pending / revision past the date</small>
+                </article>
+                <article class="mr-stat-card mr-stat-draft">
+                    <span>Drafts</span>
+                    <strong id="mrDraft">0</strong>
+                    <small>Unfinalized creatives</small>
+                </article>
+            </div>
+
+            <h4 class="mr-subheading">Key observations</h4>
+            <ul class="mr-observations" id="mrObservations"></ul>
+        </section>
+
+        <!-- 02 Month over month -->
+        <section class="mr-section">
+            <div class="mr-section-heading">
+                <h3>Month-over-Month Comparison</h3>
+                <p>This month compared with the previous month.</p>
             </div>
 
             <div class="mr-table-wrap">
-                <table class="mr-table">
+                <table class="mr-table mr-table-compact">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th class="mr-num" id="mrCmpThis">This month</th>
+                            <th class="mr-num" id="mrCmpPrev">Previous month</th>
+                            <th class="mr-num">Change</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mrCompareRows"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 03 Companies -->
+        <section class="mr-section">
+            <div class="mr-section-heading">
+                <h3>Company-wise Performance</h3>
+                <p>Results and health for the companies assigned to you.</p>
+            </div>
+
+            <div class="mr-table-wrap">
+                <table class="mr-table mr-table-wide">
                     <thead>
                         <tr>
                             <th>Company</th>
-                            <th>Total</th>
-                            <th>Approved</th>
-                            <th>Pending</th>
-                            <th>Revision</th>
-                            <th>Rejected</th>
-                            <th>Draft</th>
-                            <th>Approval Rate</th>
+                            <th class="mr-num">Total</th>
+                            <th class="mr-num">Approved</th>
+                            <th class="mr-num">Pending</th>
+                            <th class="mr-num">Revision</th>
+                            <th class="mr-num">Rejected</th>
+                            <th class="mr-num">Delays</th>
+                            <th class="mr-num">Overdue</th>
+                            <th class="mr-num">Draft</th>
+                            <th>Approval</th>
+                            <th class="mr-num">Health</th>
                         </tr>
                     </thead>
                     <tbody id="mrCompanyRows"></tbody>
+                    <tfoot id="mrCompanyFoot"></tfoot>
                 </table>
             </div>
-        </div>
 
-        <div class="mr-two-columns">
-            <div class="mr-section">
-                <div class="mr-section-heading">
-                    <div>
-                        <h3>Platform Performance</h3>
-                        <p>Creative distribution by platform.</p>
-                    </div>
-                </div>
+            <p class="mr-note">
+                <strong>Health rules.</strong>
+                <span class="mr-health mr-health-healthy">Healthy</span> below the At Risk limits &middot;
+                <span class="mr-health mr-health-risk">At Risk</span> 2+ delays, 4+ revisions, 2+ rejections or 2+ overdue &middot;
+                <span class="mr-health mr-health-critical">Critical</span> 3+ delays, 5+ revisions, 3+ rejections or 3+ overdue.
+            </p>
+        </section>
 
-                <div id="mrPlatformRows" class="mr-platform-list"></div>
-            </div>
-
-            <div class="mr-section">
-                <div class="mr-section-heading">
-                    <div>
-                        <h3>SOP Schedule</h3>
-                        <p>SOPs scheduled during the selected month.</p>
-                    </div>
-                </div>
-
-                <div class="mr-mini-stats">
-                    <div><span>Total SOPs</span><strong id="mrSopTotal">0</strong></div>
-                    <div><span>Daily</span><strong id="mrSopDaily">0</strong></div>
-                    <div><span>Weekly</span><strong id="mrSopWeekly">0</strong></div>
-                    <div><span>Monthly</span><strong id="mrSopMonthly">0</strong></div>
-                </div>
-
-                <p class="mr-note">
-                    These figures represent scheduled SOP records, not
-                    completed tasks. The database currently has no SOP
-                    completion status.
-                </p>
-            </div>
-        </div>
-
-        <div class="mr-section">
+        <!-- 04 Platforms -->
+        <section class="mr-section">
             <div class="mr-section-heading">
-                <div>
-                    <h3>Meeting Summary</h3>
-                    <p>Meetings scheduled for this SME in the selected month.</p>
-                </div>
+                <h3>Platform Performance</h3>
+                <p>Creative distribution by platform and status.</p>
+            </div>
+
+            <div id="mrPlatformRows" class="mr-platform-list"></div>
+            <ul class="mr-legend" id="mrPlatformLegend"></ul>
+        </section>
+
+        <!-- 05 SOP -->
+        <section class="mr-section">
+            <div class="mr-section-heading">
+                <h3>SOP Schedule</h3>
+                <p>SOPs scheduled during the selected month.</p>
+            </div>
+
+            <div class="mr-mini-stats">
+                <div><span>Total SOPs</span><strong id="mrSopTotal">0</strong></div>
+                <div><span>Daily</span><strong id="mrSopDaily">0</strong></div>
+                <div><span>Weekly</span><strong id="mrSopWeekly">0</strong></div>
+                <div><span>Monthly</span><strong id="mrSopMonthly">0</strong></div>
+                <div><span>Ticks saved</span><strong id="mrSopDone">-</strong></div>
+            </div>
+
+            <p class="mr-note">
+                Scheduled SOP records are counted by their SOP date. Ticks saved
+                are the completions marked on the dashboard during this month.
+            </p>
+        </section>
+
+        <!-- 06 Meetings -->
+        <section class="mr-section">
+            <div class="mr-section-heading">
+                <h3>Meetings</h3>
+                <p>Meetings scheduled for this SME in the selected month.</p>
             </div>
 
             <div class="mr-meeting-summary">
                 <div><span>Total Meetings</span><strong id="mrMeetingTotal">0</strong></div>
                 <div><span>Completed</span><strong id="mrMeetingDone">0</strong></div>
                 <div><span>Pending</span><strong id="mrMeetingPending">0</strong></div>
+                <div><span>Completion Rate</span><strong id="mrMeetingRate">0%</strong></div>
             </div>
 
             <div class="mr-table-wrap">
-                <table class="mr-table">
+                <table class="mr-table mr-table-compact">
                     <thead>
                         <tr>
                             <th>Company</th>
-                            <th>Total Meetings</th>
-                            <th>Completed</th>
-                            <th>Pending</th>
+                            <th class="mr-num">Total Meetings</th>
+                            <th class="mr-num">Completed</th>
+                            <th class="mr-num">Pending</th>
                         </tr>
                     </thead>
                     <tbody id="mrMeetingRows"></tbody>
                 </table>
             </div>
-        </div>
 
-        <div class="mr-section">
+            <h4 class="mr-subheading">Meeting details</h4>
+            <div class="mr-table-wrap">
+                <table class="mr-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Company</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>MOM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mrMeetingList"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 07 Creative details -->
+        <section class="mr-section mr-section-flow">
             <div class="mr-section-heading">
-                <div>
-                    <h3>Recent Creatives</h3>
-                    <p>Latest creatives by creative date, up to 10 records.</p>
-                </div>
+                <h3>Creative Details</h3>
+                <p id="mrCreativeSub">Every creative of the selected month.</p>
             </div>
 
             <div class="mr-table-wrap">
@@ -693,18 +898,36 @@ function mrEscape($value): string
                             <th>Company</th>
                             <th>Platform</th>
                             <th>Status</th>
+                            <th>Timing</th>
+                            <th>Remark</th>
                         </tr>
                     </thead>
                     <tbody id="mrRecentRows"></tbody>
                 </table>
             </div>
-        </div>
+        </section>
 
-        <p class="mr-footer-note">
-            Report figures are calculated from the current database records.
-            Approval counts reflect each creative's current status.
-        </p>
+        <!-- 08 Notes + sign-off -->
+        <section class="mr-section mr-section-end">
+            <div class="mr-section-heading">
+                <h3>Notes &amp; Definitions</h3>
+            </div>
+
+            <ul class="mr-defs">
+                <li><strong>Delays</strong> &ndash; creatives submitted after their creative date.</li>
+                <li><strong>Overdue</strong> &ndash; creatives still pending or in revision after their creative date.</li>
+                <li><strong>Approval rate</strong> &ndash; approved creatives as a share of all creatives in the period.</li>
+                <li>Figures reflect each creative's current status and are calculated from live database records at the time of generation.</li>
+            </ul>
+
+            <div class="mr-signoff">
+                <div><span></span>Prepared by (SME)<small id="mrSignSme"></small></div>
+                <div><span></span>Reviewed by (Reporting Manager)<small id="mrSignManager"></small></div>
+                <div><span></span>Date<small id="mrSignDate"></small></div>
+            </div>
+        </section>
+    </article>
     </div>
 </section>
 
-<script src="js/smemonthrep.js" defer></script>
+<script src="js/smemonthrep.js?v=<?= (int) @filemtime(__DIR__ . '/js/smemonthrep.js') ?>" defer></script>
