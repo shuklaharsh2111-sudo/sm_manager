@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.3
+-- version 4.9.0.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Oct 29, 2026 at 11:40 AM
--- Server version: 10.11.16-MariaDB
--- PHP Version: 8.5.12
+-- Host: sql300.infinityfree.com
+-- Generation Time: Oct 30, 2026 at 06:06 AM
+-- Server version: 11.4.13-MariaDB
+-- PHP Version: 7.2.22
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -18,7 +19,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `creative_manager`
+-- Database: `if0_43170943_creativemanager`
 --
 
 -- --------------------------------------------------------
@@ -71,7 +72,8 @@ CREATE TABLE `creatives` (
   `keywords` text DEFAULT NULL,
   `status` enum('draft','pending','approved','rejected','revision') NOT NULL DEFAULT 'draft',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `revision_reason` text DEFAULT NULL
+  `revision_reason` text DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -81,6 +83,20 @@ CREATE TABLE `creatives` (
 --
 
 CREATE TABLE `creative_des_assignments` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `creative_id` int(11) NOT NULL,
+  `smi_user_id` int(11) NOT NULL,
+  `assigned_by` int(11) NOT NULL,
+  `assigned_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `creative_smi_assignments`
+--
+
+CREATE TABLE `creative_smi_assignments` (
   `id` int(10) UNSIGNED NOT NULL,
   `creative_id` int(11) NOT NULL,
   `smi_user_id` int(11) NOT NULL,
@@ -160,6 +176,30 @@ CREATE TABLE `sme_company_assignments` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `sme_fathom_keys`
+--
+
+CREATE TABLE `sme_fathom_keys` (
+  `user_id` int(11) NOT NULL,
+  `api_key_enc` text NOT NULL,
+  `last_synced_at` datetime DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sme_fathom_sync`
+--
+
+CREATE TABLE `sme_fathom_sync` (
+  `id` tinyint(4) NOT NULL,
+  `last_synced_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `sme_meetings`
 --
 
@@ -174,6 +214,7 @@ CREATE TABLE `sme_meetings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `meeting_status` enum('not_done','done') NOT NULL DEFAULT 'not_done',
   `points_discussed` text DEFAULT NULL,
+  `next_steps` text DEFAULT NULL,
   `next_meeting_date` date DEFAULT NULL,
   `next_meeting_time` time DEFAULT NULL,
   `next_meeting_agenda` varchar(500) DEFAULT NULL,
@@ -183,7 +224,8 @@ CREATE TABLE `sme_meetings` (
   `mom_sent_at` datetime DEFAULT NULL,
   `mom_reviewed_at` datetime DEFAULT NULL,
   `mom_reviewed_by` int(11) DEFAULT NULL,
-  `mom_admin_note` varchar(500) DEFAULT NULL
+  `mom_admin_note` varchar(500) DEFAULT NULL,
+  `meeting_ended_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -199,6 +241,46 @@ CREATE TABLE `sme_meeting_attendees` (
   `name` varchar(150) NOT NULL,
   `designation` varchar(150) NOT NULL DEFAULT '',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sme_meeting_recordings`
+--
+
+CREATE TABLE `sme_meeting_recordings` (
+  `id` int(11) NOT NULL,
+  `sme_user_id` int(11) NOT NULL,
+  `recording_id` varchar(64) NOT NULL,
+  `meeting_id` int(11) DEFAULT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `started_at` datetime DEFAULT NULL,
+  `ended_at` datetime DEFAULT NULL,
+  `recording_url` varchar(2048) NOT NULL DEFAULT '',
+  `share_url` varchar(2048) NOT NULL DEFAULT '',
+  `summary` mediumtext DEFAULT NULL,
+  `action_items` mediumtext DEFAULT NULL,
+  `invitees` mediumtext DEFAULT NULL,
+  `synced_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sme_sop_completions`
+--
+
+CREATE TABLE `sme_sop_completions` (
+  `id` int(11) NOT NULL,
+  `sme_user_id` int(11) NOT NULL,
+  `sop_id` int(11) NOT NULL,
+  `company_id` int(11) NOT NULL DEFAULT 0,
+  `sop_type` varchar(10) NOT NULL,
+  `period_key` varchar(12) NOT NULL,
+  `sop_title` varchar(255) NOT NULL DEFAULT '',
+  `company_name` varchar(255) NOT NULL DEFAULT '',
+  `completed_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -230,13 +312,19 @@ CREATE TABLE `task_board_tasks` (
   `id` int(10) UNSIGNED NOT NULL,
   `company_id` int(11) NOT NULL,
   `task_title` varchar(255) NOT NULL,
+  `task_category` enum('one_time','recurring') NOT NULL DEFAULT 'one_time',
+  `recurring_interval` int(11) DEFAULT NULL,
   `task_type` enum('Strategy/Pitch Deck','Moodboard','Shoots','CP','Content Writing','Influencer') NOT NULL,
   `objective` enum('Brand Awareness','Lead Generation','Positioning','Others') NOT NULL,
   `is_priority` tinyint(1) NOT NULL DEFAULT 0,
   `created_by` int(11) NOT NULL,
   `created_by_name` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `task_status` enum('new','in_progress','completed') NOT NULL DEFAULT 'new',
+  `start_file` varchar(255) DEFAULT NULL,
+  `started_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -254,10 +342,8 @@ CREATE TABLE `users` (
   `contact` varchar(13) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
-  `role` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`role`)),
-  `gstin` varchar(20) DEFAULT NULL,
-  `reporting_manager` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `role` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
+) ;
 
 -- --------------------------------------------------------
 
@@ -305,6 +391,13 @@ ALTER TABLE `creatives`
 --
 ALTER TABLE `creative_des_assignments`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `creative_id` (`creative_id`);
+
+--
+-- Indexes for table `creative_smi_assignments`
+--
+ALTER TABLE `creative_smi_assignments`
+  ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_creative_assignment` (`creative_id`),
   ADD KEY `idx_smi_user_id` (`smi_user_id`);
 
@@ -341,6 +434,18 @@ ALTER TABLE `sme_company_assignments`
   ADD KEY `idx_sme_user_id` (`sme_user_id`);
 
 --
+-- Indexes for table `sme_fathom_keys`
+--
+ALTER TABLE `sme_fathom_keys`
+  ADD PRIMARY KEY (`user_id`);
+
+--
+-- Indexes for table `sme_fathom_sync`
+--
+ALTER TABLE `sme_fathom_sync`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `sme_meetings`
 --
 ALTER TABLE `sme_meetings`
@@ -354,6 +459,22 @@ ALTER TABLE `sme_meetings`
 ALTER TABLE `sme_meeting_attendees`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_meeting` (`meeting_id`);
+
+--
+-- Indexes for table `sme_meeting_recordings`
+--
+ALTER TABLE `sme_meeting_recordings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_user_recording` (`sme_user_id`,`recording_id`),
+  ADD KEY `idx_user_started` (`sme_user_id`,`started_at`);
+
+--
+-- Indexes for table `sme_sop_completions`
+--
+ALTER TABLE `sme_sop_completions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_user_sop_period` (`sme_user_id`,`sop_id`,`period_key`),
+  ADD KEY `idx_user_done` (`sme_user_id`,`completed_at`);
 
 --
 -- Indexes for table `sme_taskmaster_items`
@@ -371,12 +492,6 @@ ALTER TABLE `task_board_tasks`
   ADD KEY `idx_task_creator` (`created_by`),
   ADD KEY `idx_task_priority` (`is_priority`),
   ADD KEY `idx_task_created` (`created_at`);
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `user_settings`
@@ -413,6 +528,12 @@ ALTER TABLE `creative_des_assignments`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `creative_smi_assignments`
+--
+ALTER TABLE `creative_smi_assignments`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `invoices`
 --
 ALTER TABLE `invoices`
@@ -440,6 +561,18 @@ ALTER TABLE `sme_meetings`
 -- AUTO_INCREMENT for table `sme_meeting_attendees`
 --
 ALTER TABLE `sme_meeting_attendees`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `sme_meeting_recordings`
+--
+ALTER TABLE `sme_meeting_recordings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `sme_sop_completions`
+--
+ALTER TABLE `sme_sop_completions`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -475,19 +608,6 @@ ALTER TABLE `company_sops`
 --
 ALTER TABLE `creatives`
   ADD CONSTRAINT `fk_creatives_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE;
-
---
--- Constraints for table `invoice_items`
---
-ALTER TABLE `invoice_items`
-  ADD CONSTRAINT `fk_invoice_items_invoice` FOREIGN KEY (`invoice_id`) REFERENCES `invoices` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `sme_company_assignments`
---
-ALTER TABLE `sme_company_assignments`
-  ADD CONSTRAINT `fk_assignment_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_assignment_sme` FOREIGN KEY (`sme_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `task_board_tasks`

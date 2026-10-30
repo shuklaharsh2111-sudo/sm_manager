@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 30, 2026 at 10:39 AM
+-- Generation Time: Oct 30, 2026 at 10:51 AM
 -- Server version: 10.11.16-MariaDB
 -- PHP Version: 8.5.12
 
@@ -91,6 +91,20 @@ CREATE TABLE `creative_des_assignments` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `creative_smi_assignments`
+--
+
+CREATE TABLE `creative_smi_assignments` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `creative_id` int(11) NOT NULL,
+  `smi_user_id` int(11) NOT NULL,
+  `assigned_by` int(11) NOT NULL,
+  `assigned_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `invoices`
 --
 
@@ -160,6 +174,19 @@ CREATE TABLE `sme_company_assignments` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `sme_fathom_keys`
+--
+
+CREATE TABLE `sme_fathom_keys` (
+  `user_id` int(11) NOT NULL,
+  `api_key_enc` text NOT NULL,
+  `last_synced_at` datetime DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `sme_fathom_sync`
 --
 
@@ -185,6 +212,7 @@ CREATE TABLE `sme_meetings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `meeting_status` enum('not_done','done') NOT NULL DEFAULT 'not_done',
   `points_discussed` text DEFAULT NULL,
+  `next_steps` text DEFAULT NULL,
   `next_meeting_date` date DEFAULT NULL,
   `next_meeting_time` time DEFAULT NULL,
   `next_meeting_agenda` varchar(500) DEFAULT NULL,
@@ -194,7 +222,8 @@ CREATE TABLE `sme_meetings` (
   `mom_sent_at` datetime DEFAULT NULL,
   `mom_reviewed_at` datetime DEFAULT NULL,
   `mom_reviewed_by` int(11) DEFAULT NULL,
-  `mom_admin_note` varchar(500) DEFAULT NULL
+  `mom_admin_note` varchar(500) DEFAULT NULL,
+  `meeting_ended_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -366,6 +395,14 @@ ALTER TABLE `creative_des_assignments`
   ADD KEY `idx_smi_user_id` (`smi_user_id`);
 
 --
+-- Indexes for table `creative_smi_assignments`
+--
+ALTER TABLE `creative_smi_assignments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_creative_assignment` (`creative_id`),
+  ADD KEY `idx_smi_user_id` (`smi_user_id`);
+
+--
 -- Indexes for table `invoices`
 --
 ALTER TABLE `invoices`
@@ -396,6 +433,12 @@ ALTER TABLE `sme_company_assignments`
   ADD UNIQUE KEY `unique_company_assignment` (`company_id`),
   ADD UNIQUE KEY `unique_sme_company` (`sme_user_id`,`company_id`),
   ADD KEY `idx_sme_user_id` (`sme_user_id`);
+
+--
+-- Indexes for table `sme_fathom_keys`
+--
+ALTER TABLE `sme_fathom_keys`
+  ADD PRIMARY KEY (`user_id`);
 
 --
 -- Indexes for table `sme_fathom_sync`
@@ -489,6 +532,12 @@ ALTER TABLE `creatives`
 -- AUTO_INCREMENT for table `creative_des_assignments`
 --
 ALTER TABLE `creative_des_assignments`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `creative_smi_assignments`
+--
+ALTER TABLE `creative_smi_assignments`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
