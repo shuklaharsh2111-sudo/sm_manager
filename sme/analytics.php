@@ -3,7 +3,7 @@
 |--------------------------------------------------------------------------
 | SME ANALYTICS
 |--------------------------------------------------------------------------
-| Included by sme.php (?page=analytics). Shows creative, redo, delay,
+| Included by sme.php (?page=analytics). Shows creative, revision, delay, overdue,
 | platform, company and meeting statistics for the signed-in SME's assigned
 | companies only. Charts are drawn by assets/js/smeanalytics.js (no library).
 */
@@ -26,7 +26,7 @@ function anE($v)
 $anStatuses = [
     'approved' => ['Approved',      '#3dd693'],
     'pending'  => ['Pending',       '#ffc052'],
-    'revision' => ['Redo Required', '#b177ff'],
+    'revision' => ['Revision', '#b177ff'],
     'rejected' => ['Rejected',      '#ff6685'],
 ];
 
@@ -64,7 +64,7 @@ if ($anCompanyFilter > 0 && !isset($anCompanies[$anCompanyFilter])) {
 $anToday = date('Y-m-d');
 $anRangeStart = $anRange > 0 ? date('Y-m-01', strtotime('-' . ($anRange - 1) . ' months')) : null;
 
-$sql = 'SELECT cr.id, cr.company_id, cr.title, cr.platform, cr.creative_date, cr.status, cr.revision_reason
+$sql = 'SELECT cr.id, cr.company_id, cr.title, cr.platform, cr.creative_date, cr.created_at, cr.status, cr.revision_reason
         FROM creatives cr
         WHERE cr.company_id IN (SELECT sca.company_id FROM sme_company_assignments sca WHERE sca.sme_user_id = ?)';
 $types = 'i';
@@ -106,10 +106,11 @@ $platforms = [];
 $perCompany = [];
 foreach ($anCompanies as $cid => $cname) {
     if ($anCompanyFilter === 0 || $anCompanyFilter === $cid) {
-        $perCompany[$cid] = ['name' => $cname, 'total' => 0, 'delays' => 0] + array_fill_keys(array_keys($anStatuses), 0);
+        $perCompany[$cid] = ['name' => $cname, 'total' => 0, 'delays' => 0, 'overdue' => 0] + array_fill_keys(array_keys($anStatuses), 0);
     }
 }
-$delayed = [];
+$delayed = [];      // OVERDUE: pending / redo and the creative date has passed
+$lateSubmitted = []; // DELAYS: submitted after the creative date
 $redo = [];
 $thisMonth = 0;
 $upcoming30 = 0;
@@ -123,8 +124,9 @@ foreach ($anCreatives as $cr) {
     $s = $cr['status'];
     $counts[$s]++;
     $p = (string) $cr['platform'];
-    $platforms[$p] ??= ['total' => 0, 'approved' => 0];
+    $platforms[$p] ??= ['total' => 0, 'approved' => 0] + array_fill_keys(array_keys($anStatuses), 0);
     $platforms[$p]['total']++;
+    $platforms[$p][$s]++;
     if ($s === 'approved') {
         $platforms[$p]['approved']++;
     }
@@ -134,12 +136,19 @@ foreach ($anCreatives as $cr) {
         $perCompany[$cid][$s]++;
     }
     $ts = strtotime((string) $cr['creative_date']);
-    $isDelayed = $cr['creative_date'] < $anToday && in_array($s, ['pending', 'revision'], true);
-    if ($isDelayed) {
+    // Same definitions as Company Health (sme/bh.php).
+    $isOverdue = $cr['creative_date'] < $anToday && in_array($s, ['pending', 'revision'], true);
+    if ($isOverdue) {
+        if (isset($perCompany[$cid])) {
+            $perCompany[$cid]['overdue']++;
+        }
+        $delayed[] = $cr + ['days_late' => (int) floor(($todayTs - $ts) / 86400)];
+    }
+    if (!empty($cr['created_at']) && substr((string) $cr['created_at'], 0, 10) > (string) $cr['creative_date']) {
         if (isset($perCompany[$cid])) {
             $perCompany[$cid]['delays']++;
         }
-        $delayed[] = $cr + ['days_late' => (int) floor(($todayTs - $ts) / 86400)];
+        $lateSubmitted[] = $cr;
     }
     if ($s === 'revision') {
         $redo[] = $cr;
@@ -159,11 +168,13 @@ foreach ($anCreatives as $cr) {
         $latestMonth = $m;
     }
 }
-$delayCount = count($delayed);
+$overdueCount = count($delayed);
+$delayCount = count($lateSubmitted);
 $approvalRate = $total > 0 ? round($counts['approved'] / $total * 100, 1) : 0;
 $redoRate = $total > 0 ? round($counts['revision'] / $total * 100, 1) : 0;
 $rejectRate = $total > 0 ? round($counts['rejected'] / $total * 100, 1) : 0;
 $delayRate = $total > 0 ? round($delayCount / $total * 100, 1) : 0;
+$overdueRate = $total > 0 ? round($overdueCount / $total * 100, 1) : 0;
 
 /* Monthly series: N months ending at the latest month that has a creative (max 3 ahead). */
 $monthsN = $anRange > 0 ? $anRange : 12;
@@ -235,7 +246,8 @@ $anData = [
         $monthly
     )),
     'platforms' => array_map(
-        static fn($k, $v) => ['label' => $platformLabel($k), 'total' => $v['total'], 'approved' => $v['approved']],
+        static fn($k, $v) => ['label' => $platformLabel($k), 'total' => $v['total'], 'approved' => $v['approved'],
+            'counts' => array_intersect_key($v, $anStatuses)],
         array_keys($platforms),
         array_values($platforms)
     ),
@@ -390,9 +402,10 @@ $anKpis = [
     ['Total Creatives', $total, '#8b5cf6', 'All creatives in view'],
     ['Approved', $counts['approved'], $anStatuses['approved'][1], $approvalRate . '% approval rate'],
     ['Pending', $counts['pending'], $anStatuses['pending'][1], 'Waiting for admin'],
-    ['Redo Required', $counts['revision'], $anStatuses['revision'][1], $redoRate . '% redo rate'],
+    ['Revision', $counts['revision'], $anStatuses['revision'][1], $redoRate . '% revision rate'],
     ['Rejected', $counts['rejected'], $anStatuses['rejected'][1], $rejectRate . '% rejection rate'],
-    ['Delayed', $delayCount, '#fb923c', $delayRate . '% of creatives'],
+    ['Delays', $delayCount, '#fb923c', $delayRate . '% submitted late'],
+    ['Overdue', $overdueCount, '#f43f5e', $overdueRate . '% still pending past date'],
     ['Next 30 Days', $upcoming30, '#60a5fa', 'Scheduled creatives'],
 ];
 ?>
@@ -405,7 +418,7 @@ $anKpis = [
             <h2 id="anTitle"><?= $anView === 'sop' ? 'Task SOP' : 'Creative' ?> <span>Analytics</span></h2>
             <p id="anSub"><?= $anView === 'sop'
                 ? 'Track daily, weekly and monthly SOP completion across your assigned companies.'
-                : 'Track approvals, redo requests, delays and workload across your assigned companies.' ?></p>
+                : 'Track approvals, revisions, rejections, delays, overdue and workload across your assigned companies.' ?></p>
         </div>
         <form class="an-filters" method="get" action="sme.php">
             <input type="hidden" name="page" value="analytics">
@@ -487,9 +500,10 @@ $anKpis = [
             <div class="an-rates">
                 <?php foreach ([
                     ['Approval rate', $approvalRate, $anStatuses['approved'][1]],
-                    ['Redo rate', $redoRate, $anStatuses['revision'][1]],
+                    ['Revision rate', $redoRate, $anStatuses['revision'][1]],
                     ['Rejection rate', $rejectRate, $anStatuses['rejected'][1]],
                     ['Delay rate', $delayRate, '#fb923c'],
+                    ['Overdue rate', $overdueRate, '#f43f5e'],
                 ] as [$rl, $rv, $rc]): ?>
                     <div class="an-rate">
                         <div class="an-rate-top"><span><?= anE($rl) ?></span><strong style="color:<?= anE($rc) ?>"><?= $rv ?>%</strong></div>
@@ -515,7 +529,7 @@ $anKpis = [
                 <div class="an-chart" id="anTrendChart"></div>
                 <ul class="an-legend an-legend-inline">
                     <li><span class="an-sw" style="background:<?= anE($anStatuses['approved'][1]) ?>"></span>Approval %</li>
-                    <li><span class="an-sw" style="background:<?= anE($anStatuses['revision'][1]) ?>"></span>Redo %</li>
+                    <li><span class="an-sw" style="background:<?= anE($anStatuses['revision'][1]) ?>"></span>Revision %</li>
                     <li><span class="an-sw" style="background:<?= anE($anStatuses['rejected'][1]) ?>"></span>Rejection %</li>
                 </ul>
             </div>
@@ -654,7 +668,7 @@ $anKpis = [
         var root = document.getElementById('smeAnalytics');
         if (!root) return;
         var titles = {
-            creative: ['Creative', 'Track approvals, redo requests, delays and workload across your assigned companies.'],
+            creative: ['Creative', 'Track approvals, revisions, rejections, delays, overdue and workload across your assigned companies.'],
             sop: ['Task SOP', 'Track daily, weekly and monthly SOP completion across your assigned companies.']
         };
         function setMode(mode) {

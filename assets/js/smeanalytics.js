@@ -207,15 +207,18 @@
         if (!box) return;
         if (!D.platforms.length) return empty(box, 'No platform data.');
         var max = Math.max.apply(null, D.platforms.map(function (p) { return p.total; }));
+        // One bar per platform, split into its statuses (each status has its own colour).
+        var NAMES = {};
+        D.statuses.forEach(function (s) { NAMES[s.key] = s.label; });
         D.platforms.forEach(function (p) {
-            var approvedPct = p.approved / max * 100, restPct = (p.total - p.approved) / max * 100;
-            barRow(box, p.label, [
-                { pct: approvedPct, color: COLORS.approved, tip: 'Approved: ' + p.approved },
-                { pct: restPct, color: '#8b5cf6', tip: 'Other: ' + (p.total - p.approved) }
-            ], p.total);
+            var counts = p.counts || {};
+            barRow(box, p.label, ORDER.map(function (k) {
+                var n = counts[k] || 0;
+                return { pct: n / max * 100, color: COLORS[k], tip: NAMES[k] + ': ' + n };
+            }), p.total);
         });
         var lg = html('ul', 'an-legend an-legend-inline');
-        legend(lg, [{ label: 'Approved', color: COLORS.approved }, { label: 'Other statuses', color: '#8b5cf6' }]);
+        legend(lg, ORDER.map(function (k) { return { label: NAMES[k], color: COLORS[k] }; }));
         box.appendChild(lg);
     })();
 
