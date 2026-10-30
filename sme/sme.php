@@ -107,7 +107,7 @@ if (!is_file($contentFile)) { http_response_code(404); $contentFile = ''; }
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SME Dashboard | Creative Manager</title>
-    <link rel="stylesheet" href="../assets/css/sme.css">
+    <link rel="stylesheet" href="css/sme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.css" integrity="sha512-x9WwyMYBnlXMNQ6kQ/Lyzu1NqIhLQKL5Oq6xByfXuRj7s9CskyCbLv/1IjqzJmXwFXWr0ov6jBV7Qbc0hh9nHg==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <?php if ($currentPage === 'calendar'): ?><link rel="stylesheet" href="../assets/css/calendar.css"><?php endif; ?>
     <?php if ($currentPage === 'settings'): ?><link rel="stylesheet" href="../assets/css/smesettings.css"><?php endif; ?>
@@ -191,7 +191,7 @@ if (!is_file($contentFile)) { http_response_code(404); $contentFile = ''; }
             </section>
         </main>
     </div>
-    <script src="../assets/js/sme.js" defer></script>
+    <script src="js/sme.js" defer></script>
     <?php if ($currentPage === 'settings'): ?><script src="../assets/js/smesettings.js" defer></script><?php endif; ?>
 </body>
 </html>

@@ -209,6 +209,7 @@ if (in_array($action, ['fetch_sops', 'fetch_creative'], true)) {
     }
 }
 ?>
+<link rel="stylesheet" type="text/css" href="css/smecal.css">
 <!-- SME Company Calendar Modal -->
 <div
     class="sme-calendar-modal"
@@ -493,3 +494,4 @@ if (in_array($action, ['fetch_sops', 'fetch_creative'], true)) {
         </div>
     </section>
 </div>
+<script src="js/smecal.js"></script>
