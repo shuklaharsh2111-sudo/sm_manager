@@ -5,6 +5,9 @@
         if (!board || board.dataset.initialized === "true") return;
         const newTaskList = board.querySelector('#task-list');
         const wipTaskList = board.querySelector('#wip-task-list');
+        const recurringTaskList = board.querySelector('#recurring-task-list');
+        const completedTaskList = board.querySelector('#completed-task-list');
+
         async function sendTaskAction(action, taskId, file = null) {
             const data = new FormData();
             data.append('taskboard_action', action);
@@ -20,6 +23,7 @@
             if (!response.ok || !result.success) throw new Error(result.message || 'Task action failed.');
             return result;
         }
+
         board.addEventListener('click', async function (event) {
             const button = event.target.closest('[data-task-action]');
             if (!button || !board.contains(button)) return;
@@ -40,6 +44,13 @@
                         newTaskList.querySelector('#task-empty-state')?.remove();
                         wipTaskList.querySelector('#wip-empty-state')?.remove();
                         taskItem.dataset.taskStatus = 'in_progress';
+                        
+                        // Update footer to show start date & time
+                        let footer = taskItem.querySelector('.task-list-footer');
+                        if (footer) {
+                            footer.innerHTML = `<span>Started: ${result.started_at || 'Just now'}</span>`;
+                        }
+
                         const actions = taskItem.querySelector('.task-actions');
                         if (actions) {
                             actions.innerHTML = `
@@ -56,8 +67,44 @@
                     }
                 }
                 if (action === 'end') {
-                    const taskItem = board.querySelector(`.task-list-item[data-task-id="${taskId}"]`);
-                    taskItem?.remove();
+                    const taskItems = board.querySelectorAll(`.task-list-item[data-task-id="${taskId}"]`);
+                    let titleText = '', companyText = '', metaText = '', startedTimeStr = 'N/A';
+
+                    taskItems.forEach(item => {
+                        if (!titleText) {
+                            titleText = item.querySelector('h3')?.textContent || '';
+                            companyText = item.querySelector('.task-company-name')?.textContent || '';
+                            metaText = item.querySelector('.task-list-meta')?.innerHTML || '';
+                            const footerText = item.querySelector('.task-list-footer')?.textContent || '';
+                            if (footerText.includes('Started:')) {
+                                startedTimeStr = footerText.replace('Started:', '').trim();
+                            }
+                        }
+                        item.remove();
+                    });
+
+                    if (completedTaskList && titleText) {
+                        completedTaskList.querySelector('#completed-empty-state')?.remove();
+                        const completedArticle = document.createElement('article');
+                        completedArticle.className = 'task-list-item';
+                        completedArticle.dataset.taskId = taskId;
+                        completedArticle.innerHTML = `
+                            <div class="task-list-item-top">
+                                <div class="task-list-item-details">
+                                    <h3>${titleText}</h3>
+                                    <span class="task-company-name">${companyText}</span>
+                                </div>
+                                <span class="task-priority-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">Done</span>
+                            </div>
+                            <div class="task-list-meta">${metaText}</div>
+                            <div class="task-list-footer task-completed-footer-info">
+                                <span>Started: ${startedTimeStr}</span>
+                                <span>Ended: ${result.completed_at || 'Just now'}</span>
+                            </div>
+                        `;
+                        completedTaskList.prepend(completedArticle);
+                    }
+
                     if (wipTaskList && !wipTaskList.querySelector('.task-list-item')) {
                         wipTaskList.innerHTML = `
                             <div class="task-empty-state" id="wip-empty-state">
@@ -75,6 +122,7 @@
                 button.disabled = false;
             }
         });
+
         board.addEventListener('change', async function (event) {
             const fileInput = event.target.closest('[data-task-file-input]');
             if (!fileInput || !fileInput.files?.length) return;
@@ -82,24 +130,26 @@
             const taskId = fileInput.dataset.taskId;
             try {
                 const result = await sendTaskAction('upload_start_file', taskId, file);
-                const taskItem = fileInput.closest('.task-list-item');
-                let fileLink = taskItem?.querySelector('.task-file-link');
-                if (taskItem && !fileLink) {
-                    fileLink = document.createElement('div');
-                    fileLink.className = 'task-file-link';
-                    taskItem.appendChild(fileLink);
-                }
-                if (fileLink) {
-                    fileLink.replaceChildren();
-                    const icon = document.createElement('i');
-                    icon.className = 'fa-solid fa-paperclip';
-                    const link = document.createElement('a');
-                    link.href = result.start_file;
-                    link.target = '_blank';
-                    link.rel = 'noopener noreferrer';
-                    link.textContent = 'View uploaded file';
-                    fileLink.append(icon, link);
-                }
+                const taskItems = board.querySelectorAll(`.task-list-item[data-task-id="${taskId}"]`);
+                taskItems.forEach(taskItem => {
+                    let fileLink = taskItem?.querySelector('.task-file-link');
+                    if (taskItem && !fileLink) {
+                        fileLink = document.createElement('div');
+                        fileLink.className = 'task-file-link';
+                        taskItem.appendChild(fileLink);
+                    }
+                    if (fileLink) {
+                        fileLink.replaceChildren();
+                        const icon = document.createElement('i');
+                        icon.className = 'fa-solid fa-paperclip';
+                        const link = document.createElement('a');
+                        link.href = result.start_file;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.textContent = 'View uploaded file';
+                        fileLink.append(icon, link);
+                    }
+                });
                 if (typeof showToast === 'function') showToast(result.message);
             } catch (error) {
                 alert(error.message);
@@ -107,31 +157,38 @@
                 fileInput.value = '';
             }
         });
+
         board.dataset.initialized = "true";
+
         // Modal & Form Logic
         const overlay = board.querySelector("#task-modal-overlay");
         const form = board.querySelector("#task-create-form");
-        const openButton = board.querySelector("[data-open-task-modal]");
+        const openButtons = board.querySelectorAll("[data-open-task-modal]");
         const closeButtons = board.querySelectorAll("[data-close-task-modal]");
         const companySelect = board.querySelector("#task-company");
         const companyPreview = board.querySelector("#task-company-preview");
         const companyLogo = board.querySelector("#task-company-logo");
         const companyName = board.querySelector("#task-company-name");
+        const taskCategorySelect = board.querySelector("#task-category");
+        const recurringIntervalWrapper = board.querySelector("#recurring-interval-wrapper");
         const submitButton = board.querySelector("#task-submit-button");
         const message = board.querySelector("#task-form-message");
         const toast = board.querySelector("#task-board-toast");
         let previousFocus = null, toastTimer = null;
+
         function showMessage(text, isError) {
             message.textContent = text;
             message.hidden = false;
             message.classList.toggle("is-error", Boolean(isError));
         }
+
         function showToast(text) {
             window.clearTimeout(toastTimer);
             toast.textContent = text;
             toast.hidden = false;
             toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3500);
         }
+
         function openModal() {
             previousFocus = document.activeElement;
             overlay.hidden = false;
@@ -139,11 +196,13 @@
             message.hidden = true;
             window.setTimeout(() => companySelect.focus(), 50);
         }
+
         function closeModal() {
             overlay.hidden = true;
             document.body.classList.remove("task-modal-open");
             if (previousFocus && typeof previousFocus.focus === "function") previousFocus.focus();
         }
+
         function updateCompanyPreview() {
             const selected = companySelect.options[companySelect.selectedIndex];
             if (!selected || !selected.value) {
@@ -165,56 +224,91 @@
             companyLogo.src = new URL(cleanPath, new URL(".", window.location.href)).href;
             companyPreview.hidden = false;
         }
-        if (openButton) openButton.addEventListener("click", openModal);
+
+        taskCategorySelect.addEventListener("change", function () {
+            if (this.value === "recurring") {
+                recurringIntervalWrapper.style.display = "flex";
+                document.querySelector("#recurring-interval").required = true;
+            } else {
+                recurringIntervalWrapper.style.display = "none";
+                document.querySelector("#recurring-interval").required = false;
+            }
+        });
+
+        openButtons.forEach(btn => btn.addEventListener("click", openModal));
         closeButtons.forEach(btn => btn.addEventListener("click", closeModal));
         overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
         document.addEventListener("keydown", e => { if (e.key === "Escape" && !overlay.hidden) closeModal(); });
         companySelect.addEventListener("change", updateCompanyPreview);
+
         function addTaskToList(task) {
-            const taskList = board.querySelector("#task-list");
-            if (!taskList) return;
-            taskList.querySelector("#task-empty-state")?.remove();
-            const article = document.createElement("article");
-            article.className = "task-list-item";
-            article.dataset.taskId = String(task.id);
-            const top = document.createElement("div");
-            top.className = "task-list-item-top";
-            const details = document.createElement("div");
-            details.className = "task-list-item-details";
-            const title = document.createElement("h3");
-            title.textContent = task.task_title;
-            const company = document.createElement("span");
-            company.className = "task-company-name";
-            const selected = companySelect.options[companySelect.selectedIndex];
-            company.textContent = selected ? selected.textContent.trim() : "";
-            details.append(title, company);
-            top.appendChild(details);
-            if (Number(task.is_priority) === 1) {
-                const priority = document.createElement("span");
-                priority.className = "task-priority-badge";
-                priority.textContent = "Priority";
-                top.appendChild(priority);
+            const buildArticle = (isRecurringCard = false) => {
+                const article = document.createElement("article");
+                article.className = "task-list-item" + (task.task_category === 'recurring' ? " recurring-highlight-item" : "");
+                article.dataset.taskId = String(task.id);
+                
+                const top = document.createElement("div");
+                top.className = "task-list-item-top";
+                const details = document.createElement("div");
+                details.className = "task-list-item-details";
+                const title = document.createElement("h3");
+                title.textContent = task.task_title;
+                const company = document.createElement("span");
+                company.className = "task-company-name";
+                const selected = companySelect.options[companySelect.selectedIndex];
+                company.textContent = selected ? selected.textContent.trim() : "";
+                details.append(title, company);
+                top.appendChild(details);
+
+                if (task.task_category === 'recurring') {
+                    const badge = document.createElement("span");
+                    badge.className = "task-priority-badge recurring-badge";
+                    badge.innerHTML = `<i class="fa-solid fa-repeat"></i> ${task.recurring_interval} Days`;
+                    top.appendChild(badge);
+                } else if (Number(task.is_priority) === 1) {
+                    const priority = document.createElement("span");
+                    priority.className = "task-priority-badge";
+                    priority.textContent = "Priority";
+                    top.appendChild(priority);
+                }
+
+                if (!isRecurringCard) {
+                    const actions = document.createElement("div");
+                    actions.className = "task-actions";
+                    const startBtn = document.createElement("button");
+                    startBtn.type = "button";
+                    startBtn.className = "task-action-btn task-start-btn";
+                    startBtn.dataset.taskAction = "start";
+                    startBtn.dataset.taskId = String(task.id);
+                    startBtn.title = "Start Task";
+                    startBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                    actions.appendChild(startBtn);
+                    top.appendChild(actions);
+                }
+
+                const meta = document.createElement("div");
+                meta.className = "task-list-meta";
+                meta.innerHTML = `<span>${task.task_type}</span><span>${task.objective}</span>`;
+                
+                const footer = document.createElement("div");
+                footer.className = "task-list-footer";
+                footer.innerHTML = `<span>Created by ${task.created_by_name}</span><span>${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span>`;
+                
+                article.append(top, meta, footer);
+                return article;
+            };
+
+            if (newTaskList) {
+                newTaskList.querySelector('#task-empty-state')?.remove();
+                newTaskList.prepend(buildArticle(false));
             }
-            const actions = document.createElement("div");
-            actions.className = "task-actions";
-            const startBtn = document.createElement("button");
-            startBtn.type = "button";
-            startBtn.className = "task-action-btn task-start-btn";
-            startBtn.dataset.taskAction = "start";
-            startBtn.dataset.taskId = String(task.id);
-            startBtn.title = "Start Task";
-            startBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-            actions.appendChild(startBtn);
-            top.appendChild(actions);
-            const meta = document.createElement("div");
-            meta.className = "task-list-meta";
-            meta.innerHTML = `<span>${task.task_type}</span><span>${task.objective}</span>`;
-            const footer = document.createElement("div");
-            footer.className = "task-list-footer";
-            footer.innerHTML = `<span>Created by ${task.created_by_name}</span><span>${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span>`;
-            article.append(top, meta, footer);
-            taskList.prepend(article);
+
+            if (task.task_category === 'recurring' && recurringTaskList) {
+                recurringTaskList.querySelector('#recurring-empty-state')?.remove();
+                recurringTaskList.prepend(buildArticle(true));
+            }
         }
+
         form.addEventListener("submit", async function (event) {
             event.preventDefault();
             if (!form.reportValidity()) return;
@@ -233,6 +327,7 @@
                 if (!response.ok || !result.success) throw new Error(result.message || "Unable to create task.");
                 closeModal();
                 form.reset();
+                recurringIntervalWrapper.style.display = "none";
                 updateCompanyPreview();
                 if (result.task) addTaskToList(result.task);
                 showToast(result.message || "Task created successfully!");

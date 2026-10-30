@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['taskboard_action']
         $stmt->bind_param('i', $taskId);
         if (!$stmt->execute() || $stmt->affected_rows !== 1) { $stmt->close(); $tbRespond(500, ['success' => false, 'message' => 'Unable to start task.']); }
         $stmt->close();
-        $tbRespond(200, ['success' => true, 'message' => 'Task started successfully!']);
+        $tbRespond(200, ['success' => true, 'message' => 'Task started successfully!', 'started_at' => date('d M Y, H:i')]);
     }
     if ($action === 'upload_start_file') {
         if ($currentStatus !== 'in_progress') { $tbRespond(422, ['success' => false, 'message' => 'Start task before uploading.']); }
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['taskboard_action']
         $stmt->bind_param('i', $taskId);
         if (!$stmt->execute() || $stmt->affected_rows !== 1) { $stmt->close(); $tbRespond(500, ['success' => false, 'message' => 'Unable to complete task.']); }
         $stmt->close();
-        $tbRespond(200, ['success' => true, 'message' => 'Task completed successfully!']);
+        $tbRespond(200, ['success' => true, 'message' => 'Task completed successfully!', 'completed_at' => date('d M Y, H:i')]);
     }
 }
 // Action: Create Task
@@ -93,6 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['taskboard_action'] ?? '') 
     }
     $companyId = filter_var($_POST['company_id'] ?? null, FILTER_VALIDATE_INT);
     $title = trim((string)($_POST['task_title'] ?? ''));
+    $taskCategory = trim((string)($_POST['task_category'] ?? 'one_time'));
+    $recurringInterval = null;
+    if ($taskCategory === 'recurring') {
+        $recurringInterval = filter_var($_POST['recurring_interval'] ?? null, FILTER_VALIDATE_INT);
+        if (!in_array($recurringInterval, [15, 30], true)) {
+            $tbRespond(422, ['success' => false, 'message' => 'Invalid recurring interval.']);
+        }
+    }
     $type = trim((string)($_POST['task_type'] ?? ''));
     $objective = trim((string)($_POST['objective'] ?? ''));
     $isPriority = (isset($_POST['is_priority']) && $_POST['is_priority'] === '1') ? 1 : 0;
@@ -105,12 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['taskboard_action'] ?? '') 
     $assignStmt->close();
     if (!$isAssigned) { $tbRespond(403, ['success' => false, 'message' => 'Company not assigned.']); }
     $creatorName = $taskBoardUserName;
-    $insertStmt = $conn->prepare("INSERT INTO task_board_tasks (company_id, task_title, task_type, objective, is_priority, created_by, created_by_name) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $insertStmt->bind_param('isssiis', $companyId, $title, $type, $objective, $isPriority, $taskBoardUserId, $creatorName);
+    $insertStmt = $conn->prepare("INSERT INTO task_board_tasks (company_id, task_title, task_category, recurring_interval, task_type, objective, is_priority, created_by, created_by_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $insertStmt->bind_param('ississiis', $companyId, $title, $taskCategory, $recurringInterval, $type, $objective, $isPriority, $taskBoardUserId, $creatorName);
     if (!$insertStmt->execute()) { $insertStmt->close(); $tbRespond(500, ['success' => false, 'message' => 'Save failed.']); }
     $taskId = (int)$conn->insert_id;
     $insertStmt->close();
-    $tbRespond(201, ['success' => true, 'message' => 'Task created!', 'task' => ['id' => $taskId, 'company_id' => $companyId, 'task_title' => $title, 'task_type' => $type, 'objective' => $objective, 'is_priority' => $isPriority, 'created_by' => $taskBoardUserId, 'created_by_name' => $creatorName]]);
+    $tbRespond(201, ['success' => true, 'message' => 'Task created!', 'task' => ['id' => $taskId, 'company_id' => $companyId, 'task_title' => $title, 'task_category' => $taskCategory, 'recurring_interval' => $recurringInterval, 'task_type' => $type, 'objective' => $objective, 'is_priority' => $isPriority, 'created_by' => $taskBoardUserId, 'created_by_name' => $creatorName, 'created_at' => date('Y-m-d H:i:s')]]);
 }
 // Load Companies
 $taskBoardCompanies = [];
@@ -128,14 +136,27 @@ if ($companiesStmt) {
 // Load Tasks
 $taskBoardTasks = [];
 $taskBoardWipTasks = [];
-$tasksStmt = $conn->prepare("SELECT t.id, t.company_id, t.task_title, t.task_type, t.objective, t.is_priority, t.created_by, t.created_by_name, t.created_at, t.task_status, t.start_file, t.started_at, t.completed_at, c.comp_name, c.comp_logo FROM task_board_tasks t INNER JOIN companies c ON c.id = t.company_id INNER JOIN sme_company_assignments sca ON sca.company_id = t.company_id AND sca.sme_user_id = ? WHERE t.task_status IN ('new', 'in_progress') ORDER BY t.is_priority DESC, t.created_at DESC, t.id DESC");
+$taskBoardRecurringTasks = [];
+$taskBoardCompletedTasks = [];
+
+$tasksStmt = $conn->prepare("SELECT t.id, t.company_id, t.task_title, t.task_category, t.recurring_interval, t.task_type, t.objective, t.is_priority, t.created_by, t.created_by_name, t.created_at, t.task_status, t.start_file, t.started_at, t.completed_at, c.comp_name, c.comp_logo FROM task_board_tasks t INNER JOIN companies c ON c.id = t.company_id INNER JOIN sme_company_assignments sca ON sca.company_id = t.company_id AND sca.sme_user_id = ? ORDER BY t.is_priority DESC, t.created_at DESC, t.id DESC");
 if ($tasksStmt) {
     $tasksStmt->bind_param('i', $taskBoardUserId);
     if ($tasksStmt->execute()) {
         $res = $tasksStmt->get_result();
         while ($row = $res->fetch_assoc()) {
-            if ($row['task_status'] === 'new') { $taskBoardTasks[] = $row; }
-            elseif ($row['task_status'] === 'in_progress') { $taskBoardWipTasks[] = $row; }
+            if ($row['task_status'] === 'completed') {
+                $taskBoardCompletedTasks[] = $row;
+            } else {
+                if ($row['task_category'] === 'recurring') {
+                    $taskBoardRecurringTasks[] = $row;
+                }
+                if ($row['task_status'] === 'new') { 
+                    $taskBoardTasks[] = $row; 
+                } elseif ($row['task_status'] === 'in_progress') { 
+                    $taskBoardWipTasks[] = $row; 
+                }
+            }
         }
         $res->free();
     }
@@ -171,13 +192,15 @@ if ($tasksStmt) {
                         </div>
                     <?php else: ?>
                         <?php foreach ($taskBoardTasks as $task): ?>
-                            <article class="task-list-item" data-task-id="<?= (int)$task['id'] ?>">
+                            <article class="task-list-item <?= $task['task_category'] === 'recurring' ? 'recurring-highlight-item' : '' ?>" data-task-id="<?= (int)$task['id'] ?>">
                                 <div class="task-list-item-top">
                                     <div class="task-list-item-details">
                                         <h3><?= $tbEscape($task['task_title']) ?></h3>
                                         <span class="task-company-name"><?= $tbEscape($task['comp_name']) ?></span>
                                     </div>
-                                    <?php if ((int)$task['is_priority'] === 1): ?>
+                                    <?php if ($task['task_category'] === 'recurring'): ?>
+                                        <span class="task-priority-badge recurring-badge"><i class="fa-solid fa-repeat"></i> <?= (int)$task['recurring_interval'] ?>D</span>
+                                    <?php elseif ((int)$task['is_priority'] === 1): ?>
                                         <span class="task-priority-badge">Priority</span>
                                     <?php endif; ?>
                                     <div class="task-actions">
@@ -223,13 +246,15 @@ if ($tasksStmt) {
                         </div>
                     <?php else: ?>
                         <?php foreach ($taskBoardWipTasks as $task): ?>
-                            <article class="task-list-item" data-task-id="<?= (int)$task['id'] ?>" data-task-status="in_progress">
+                            <article class="task-list-item <?= $task['task_category'] === 'recurring' ? 'recurring-highlight-item' : '' ?>" data-task-id="<?= (int)$task['id'] ?>" data-task-status="in_progress">
                                 <div class="task-list-item-top">
                                     <div class="task-list-item-details">
                                         <h3><?= $tbEscape($task['task_title']) ?></h3>
                                         <span class="task-company-name"><?= $tbEscape($task['comp_name']) ?></span>
                                     </div>
-                                    <?php if ((int)$task['is_priority'] === 1): ?>
+                                    <?php if ($task['task_category'] === 'recurring'): ?>
+                                        <span class="task-priority-badge recurring-badge"><i class="fa-solid fa-repeat"></i> <?= (int)$task['recurring_interval'] ?>D</span>
+                                    <?php elseif ((int)$task['is_priority'] === 1): ?>
                                         <span class="task-priority-badge">Priority</span>
                                     <?php endif; ?>
                                     <div class="task-actions">
@@ -245,6 +270,9 @@ if ($tasksStmt) {
                                 <div class="task-list-meta">
                                     <span><?= $tbEscape($task['task_type']) ?></span>
                                     <span><?= $tbEscape($task['objective']) ?></span>
+                                </div>
+                                <div class="task-list-footer">
+                                    <span>Started: <?= !empty($task['started_at']) ? $tbEscape(date('d M Y, H:i', strtotime($task['started_at']))) : 'Just now' ?></span>
                                 </div>
                                 <?php if (!empty($task['start_file'])): ?>
                                     <div class="task-file-link">
@@ -264,18 +292,92 @@ if ($tasksStmt) {
         </article>
 
         <!-- CARD 3: RECURRING -->
-        <article class="task-category-card recurring-task-card">
+        <article class="task-category-card recurring-task-card recurring-column-card">
             <div class="task-card-top">
-                <div class="task-card-icon"><i class="fa-solid fa-repeat"></i></div>
+                <div class="task-card-icon" style="color: #fbbf24;"><i class="fa-solid fa-repeat"></i></div>
                 <span class="task-card-number">03</span>
             </div>
             <div class="task-card-content">
                 <h2>Recurring Task</h2>
                 <p>Organize repetitive tasks and regular activities.</p>
+                <div class="task-list" id="recurring-task-list">
+                    <?php if (empty($taskBoardRecurringTasks)): ?>
+                        <div class="task-empty-state" id="recurring-empty-state">
+                            <i class="fa-solid fa-repeat"></i>
+                            <p>No recurring tasks.</p>
+                            <span>Add recurring tasks from the modal.</span>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($taskBoardRecurringTasks as $task): ?>
+                            <article class="task-list-item recurring-highlight-item" data-task-id="<?= (int)$task['id'] ?>">
+                                <div class="task-list-item-top">
+                                    <div class="task-list-item-details">
+                                        <h3><?= $tbEscape($task['task_title']) ?></h3>
+                                        <span class="task-company-name"><?= $tbEscape($task['comp_name']) ?></span>
+                                    </div>
+                                    <span class="task-priority-badge recurring-badge"><i class="fa-solid fa-repeat"></i> <?= (int)$task['recurring_interval'] ?> Days</span>
+                                </div>
+                                <div class="task-list-meta">
+                                    <span><?= $tbEscape($task['task_type']) ?></span>
+                                    <span><?= $tbEscape($task['objective']) ?></span>
+                                </div>
+                                <div class="task-list-footer">
+                                    <span>Created by <?= $tbEscape($task['created_by_name']) ?></span>
+                                    <span><?= $tbEscape(date('d M Y', strtotime($task['created_at']))) ?></span>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="task-card-footer">
-                <span class="task-card-status"><span class="status-dot"></span>Scheduled work</span>
-                <button type="button" class="task-add-button" aria-label="Recurring tasks" title="Recurring task integration coming next" disabled><i class="fa-solid fa-plus"></i></button>
+                <span class="task-card-status"><span class="status-dot" style="background-color: #fbbf24;"></span>Scheduled work</span>
+                <button type="button" class="task-add-button" data-open-task-modal aria-label="Add recurring task" title="Add New Task"><i class="fa-solid fa-plus"></i></button>
+            </div>
+        </article>
+
+        <!-- CARD 4: COMPLETED TASKS -->
+        <article class="task-category-card completed-task-card">
+            <div class="task-card-top">
+                <div class="task-card-icon"><i class="fa-solid fa-flag-checkered"></i></div>
+                <span class="task-card-number">04</span>
+            </div>
+            <div class="task-card-content">
+                <h2>Completed Tasks</h2>
+                <p>Tasks that have been successfully finished.</p>
+                <div class="task-list" id="completed-task-list">
+                    <?php if (empty($taskBoardCompletedTasks)): ?>
+                        <div class="task-empty-state" id="completed-empty-state">
+                            <i class="fa-solid fa-check-double"></i>
+                            <p>No completed tasks yet.</p>
+                            <span>Finished tasks will appear here.</span>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($taskBoardCompletedTasks as $task): ?>
+                            <article class="task-list-item" data-task-id="<?= (int)$task['id'] ?>">
+                                <div class="task-list-item-top">
+                                    <div class="task-list-item-details">
+                                        <h3><?= $tbEscape($task['task_title']) ?></h3>
+                                        <span class="task-company-name"><?= $tbEscape($task['comp_name']) ?></span>
+                                    </div>
+                                    <span class="task-priority-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">Done</span>
+                                </div>
+                                <div class="task-list-meta">
+                                    <span><?= $tbEscape($task['task_type']) ?></span>
+                                    <span><?= $tbEscape($task['objective']) ?></span>
+                                </div>
+                                <div class="task-list-footer task-completed-footer-info">
+                                    <span>Started: <?= !empty($task['started_at']) ? $tbEscape(date('d M Y, H:i', strtotime($task['started_at']))) : 'N/A' ?></span>
+                                    <span>Ended: <?= !empty($task['completed_at']) ? $tbEscape(date('d M Y, H:i', strtotime($task['completed_at']))) : 'N/A' ?></span>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <div class="task-card-footer">
+                <span class="task-card-status"><span class="status-dot"></span>Finished work</span>
+                <button type="button" class="task-add-button" aria-label="Completed tasks" title="Completed tasks archive" disabled><i class="fa-solid fa-check"></i></button>
             </div>
         </article>
     </div>
@@ -314,6 +416,20 @@ if ($tasksStmt) {
                     <div class="task-form-field">
                         <label for="task-title">Task Title *</label>
                         <input type="text" id="task-title" name="task_title" maxlength="255" placeholder="Enter task title" required>
+                    </div>
+                    <div class="task-form-field">
+                        <label for="task-category">Task Category *</label>
+                        <select id="task-category" name="task_category" required>
+                            <option value="one_time">One Time</option>
+                            <option value="recurring">Recurring</option>
+                        </select>
+                    </div>
+                    <div class="task-form-field" id="recurring-interval-wrapper" style="display: none;">
+                        <label for="recurring-interval">Recurring Interval *</label>
+                        <select id="recurring-interval" name="recurring_interval">
+                            <option value="15">15 Days</option>
+                            <option value="30">30 Days</option>
+                        </select>
                     </div>
                     <div class="task-form-field">
                         <label for="task-type">Task Type *</label>

@@ -57,13 +57,18 @@
   border-radius: var(--tb-radius);
   border: 1px solid var(--tb-border-color);
 }
-/* Equal size 3 div grid columns */
+/* 4 div grid columns */
 .task-board-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
-@media (max-width: 1024px) {
+@media (max-width: 1400px) {
+  .task-board-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 768px) {
   .task-board-grid {
     grid-template-columns: 1fr;
   }
@@ -76,6 +81,10 @@
   display: flex;
   flex-direction: column;
   padding: 10px;
+}
+.recurring-column-card {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.03) 0%, var(--tb-card-bg) 100%);
 }
 .task-card-top {
   display: flex;
@@ -111,7 +120,7 @@
   color: var(--tb-text-muted);
   margin: 0 0 8px;
 }
-/* List Item & Inline Buttons */
+/* List Item & Highlights */
 .task-list {
   display: flex;
   flex-direction: column;
@@ -124,10 +133,23 @@
   border-bottom: 1px solid var(--tb-border-subtle);
   padding: 8px 6px;
   transition: var(--tb-transition);
+  border-radius: 4px;
 }
 .task-list-item:hover {
   background: rgba(139, 92, 246, 0.05);
 }
+
+/* Eye-catching Recurring Task Highlight Styling (Orange/Yellow Amber) */
+.recurring-highlight-item {
+  border-left: 3px solid #fbbf24 !important;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.12) 0%, rgba(18, 22, 36, 0.6) 30%) !important;
+}
+.recurring-badge {
+  background-color: rgba(251, 191, 36, 0.2) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
 .task-list-item-top {
   display: flex;
   align-items: center;
@@ -218,6 +240,10 @@
   border-top: 1px dashed var(--tb-border-subtle);
   padding-top: 3px;
   margin-top: 4px;
+}
+.task-completed-footer-info {
+  font-size: 0.58rem;
+  color: #34d399;
 }
 .task-file-link {
   display: flex;
