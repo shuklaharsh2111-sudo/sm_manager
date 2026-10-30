@@ -480,3 +480,79 @@
 .task-board-toast[hidden] {
   display: none !important;
 }
+.task-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.task-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.task-start-btn {
+    color: #fff;
+    background: #237a57;
+}
+
+.task-start-btn:hover:not(:disabled) {
+    background: #2d956b;
+}
+
+.task-upload-btn {
+    width: 36px;
+    padding: 8px;
+    color: #fff;
+    background: #5145a5;
+    font-size: 15px;
+}
+
+.task-upload-btn:hover:not(:disabled) {
+    background: #6859c9;
+}
+
+.task-end-btn {
+    color: #fff;
+    background: #a83d4a;
+}
+
+.task-end-btn:hover:not(:disabled) {
+    background: #c64b59;
+}
+
+.task-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.task-file-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.task-file-link a {
+    color: #a99aff;
+    text-decoration: none;
+}
+
+.task-file-link a:hover {
+    text-decoration: underline;
+}
