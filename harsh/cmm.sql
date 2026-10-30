@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 30, 2026 at 08:39 AM
+-- Generation Time: Oct 30, 2026 at 10:38 AM
 -- Server version: 10.11.16-MariaDB
 -- PHP Version: 8.5.12
 
@@ -131,7 +131,9 @@ INSERT INTO `creatives` (`id`, `user_id`, `company_id`, `sop_id`, `platform`, `c
 (6, 3, 6, 9, 'linkedin', '2026-10-25', 'Falguni Weekly Brand Creative', 'Building a stronger brand presence.', 'Weekly LinkedIn creative.', 'uploads/creatives/2c9151fa3e5a49d5f92f68cdc5ecce9a.png', NULL, 'linkedin, weekly, brand', 'draft', '2026-10-23 12:49:51', NULL),
 (7, 22, 18, 1, 'facebook', '2026-10-16', 'Nilesh Daily Creative One', 'Daily creative update for our audience.', 'Daily social media creative.', 'uploads/creatives/8b8077913dfd9cb6ebd887203d571682.jpg', NULL, 'daily, facebook, creative', 'approved', '2026-10-23 12:49:51', NULL),
 (8, 22, 18, 2, 'instagram', '2026-10-17', 'Nilesh Daily Creative Two', 'Creative content for the daily campaign.', 'Instagram creative for the assigned SOP.', 'uploads/creatives/662f2feca0b6f619ac304c4091c69817.jpg', NULL, 'instagram, daily, campaign', 'pending', '2026-10-23 12:49:51', NULL),
-(9, 22, 18, 4, 'google', '2026-10-29', 'Nilesh Weekly Creative', 'Our latest weekly creative update.', 'Weekly creative for the assigned company.', 'uploads/creatives/2c9151fa3e5a49d5f92f68cdc5ecce9a.png', NULL, 'google, weekly, creative', 'approved', '2026-10-23 12:49:51', NULL);
+(9, 22, 18, 4, 'google', '2026-10-29', 'Nilesh Weekly Creative', 'Our latest weekly creative update.', 'Weekly creative for the assigned company.', 'uploads/creatives/2c9151fa3e5a49d5f92f68cdc5ecce9a.png', NULL, 'google, weekly, creative', 'approved', '2026-10-23 12:49:51', NULL),
+(10, 22, 20, NULL, 'instagram', '2026-11-20', 'I\'ve made it.', 'Hii hellow', 'Keep it as it is, only change the main details', 'uploads/creatives/00d8867e099dd483875085c0a65dc991.png', '', 'abcd, xyze', 'approved', '2026-10-30 08:21:26', NULL),
+(11, 22, 18, NULL, 'facebook', '2026-10-31', 'Green One', 'USP Theme', 'Keep it beautiful', 'uploads/creatives/1b5f7556d1963e6649f275269afc6ad7.png', 'https://abcd.com', 'xyz, lmn', 'approved', '2026-10-30 08:24:35', NULL);
 
 -- --------------------------------------------------------
 
@@ -288,6 +290,17 @@ INSERT INTO `sme_company_assignments` (`id`, `sme_user_id`, `company_id`, `assig
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `sme_fathom_sync`
+--
+
+CREATE TABLE `sme_fathom_sync` (
+  `id` tinyint(4) NOT NULL,
+  `last_synced_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `sme_meetings`
 --
 
@@ -337,6 +350,28 @@ CREATE TABLE `sme_meeting_attendees` (
   `name` varchar(150) NOT NULL,
   `designation` varchar(150) NOT NULL DEFAULT '',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sme_meeting_recordings`
+--
+
+CREATE TABLE `sme_meeting_recordings` (
+  `id` int(11) NOT NULL,
+  `sme_user_id` int(11) NOT NULL,
+  `recording_id` varchar(64) NOT NULL,
+  `meeting_id` int(11) DEFAULT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `started_at` datetime DEFAULT NULL,
+  `ended_at` datetime DEFAULT NULL,
+  `recording_url` varchar(2048) NOT NULL DEFAULT '',
+  `share_url` varchar(2048) NOT NULL DEFAULT '',
+  `summary` mediumtext DEFAULT NULL,
+  `action_items` mediumtext DEFAULT NULL,
+  `invitees` mediumtext DEFAULT NULL,
+  `synced_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -394,6 +429,8 @@ CREATE TABLE `task_board_tasks` (
   `id` int(10) UNSIGNED NOT NULL,
   `company_id` int(11) NOT NULL,
   `task_title` varchar(255) NOT NULL,
+  `task_category` enum('one_time','recurring') NOT NULL DEFAULT 'one_time',
+  `recurring_interval` int(11) DEFAULT NULL,
   `task_type` enum('Strategy/Pitch Deck','Moodboard','Shoots','CP','Content Writing','Influencer') NOT NULL,
   `objective` enum('Brand Awareness','Lead Generation','Positioning','Others') NOT NULL,
   `is_priority` tinyint(1) NOT NULL DEFAULT 0,
@@ -411,13 +448,14 @@ CREATE TABLE `task_board_tasks` (
 -- Dumping data for table `task_board_tasks`
 --
 
-INSERT INTO `task_board_tasks` (`id`, `company_id`, `task_title`, `task_type`, `objective`, `is_priority`, `created_by`, `created_by_name`, `created_at`, `updated_at`, `task_status`, `start_file`, `started_at`, `completed_at`) VALUES
-(1, 20, 'KT First Task', 'Shoots', 'Positioning', 1, 22, 'Nilesh Prajapati', '2026-10-29 10:22:44', '2026-10-30 06:33:33', 'completed', '../uploads/task_board/02648081637cdabd8eb32caca213c69f.png', '2026-10-30 12:03:02', '2026-10-30 12:03:33'),
-(2, 20, 'KT First Task', 'CP', 'Lead Generation', 0, 22, 'Nilesh Prajapati', '2026-10-29 10:34:38', '2026-10-29 10:34:38', 'new', NULL, NULL, NULL),
-(3, 20, 'KT First Task', 'CP', 'Lead Generation', 0, 22, 'Nilesh Prajapati', '2026-10-29 10:50:08', '2026-10-29 10:50:08', 'new', NULL, NULL, NULL),
-(4, 20, 'KT First Task', 'Shoots', 'Lead Generation', 1, 22, 'Nilesh Prajapati', '2026-10-29 11:11:14', '2026-10-30 06:28:55', 'completed', '../uploads/task_board/c8fddaae730696535cc270f00f0abc71.pdf', '2026-10-30 11:29:56', '2026-10-30 11:58:55'),
-(5, 18, 'abcd', 'Shoots', 'Positioning', 0, 22, 'Nilesh Prajapati', '2026-10-30 06:29:24', '2026-10-30 06:38:11', 'completed', '../uploads/task_board/6ae63cfbcdd5c2d063f4b5f75136ec93.png', '2026-10-30 12:07:53', '2026-10-30 12:08:11'),
-(6, 18, 'Creative', 'Moodboard', 'Positioning', 1, 22, 'Nilesh Prajapati', '2026-10-30 06:37:07', '2026-10-30 06:37:26', 'completed', '../uploads/task_board/90353488c97610f732acab61cf3f5de5.png', '2026-10-30 12:07:12', '2026-10-30 12:07:26');
+INSERT INTO `task_board_tasks` (`id`, `company_id`, `task_title`, `task_category`, `recurring_interval`, `task_type`, `objective`, `is_priority`, `created_by`, `created_by_name`, `created_at`, `updated_at`, `task_status`, `start_file`, `started_at`, `completed_at`) VALUES
+(1, 20, 'KT First Task', 'one_time', NULL, 'Shoots', 'Positioning', 1, 22, 'Nilesh Prajapati', '2026-10-29 10:22:44', '2026-10-30 06:33:33', 'completed', '../uploads/task_board/02648081637cdabd8eb32caca213c69f.png', '2026-10-30 12:03:02', '2026-10-30 12:03:33'),
+(2, 20, 'KT First Task', 'one_time', NULL, 'CP', 'Lead Generation', 0, 22, 'Nilesh Prajapati', '2026-10-29 10:34:38', '2026-10-29 10:34:38', 'new', NULL, NULL, NULL),
+(3, 20, 'KT First Task', 'one_time', NULL, 'CP', 'Lead Generation', 0, 22, 'Nilesh Prajapati', '2026-10-29 10:50:08', '2026-10-29 10:50:08', 'new', NULL, NULL, NULL),
+(4, 20, 'KT First Task', 'one_time', NULL, 'Shoots', 'Lead Generation', 1, 22, 'Nilesh Prajapati', '2026-10-29 11:11:14', '2026-10-30 06:28:55', 'completed', '../uploads/task_board/c8fddaae730696535cc270f00f0abc71.pdf', '2026-10-30 11:29:56', '2026-10-30 11:58:55'),
+(5, 18, 'abcd', 'one_time', NULL, 'Shoots', 'Positioning', 0, 22, 'Nilesh Prajapati', '2026-10-30 06:29:24', '2026-10-30 06:38:11', 'completed', '../uploads/task_board/6ae63cfbcdd5c2d063f4b5f75136ec93.png', '2026-10-30 12:07:53', '2026-10-30 12:08:11'),
+(6, 18, 'Creative', 'one_time', NULL, 'Moodboard', 'Positioning', 1, 22, 'Nilesh Prajapati', '2026-10-30 06:37:07', '2026-10-30 06:37:26', 'completed', '../uploads/task_board/90353488c97610f732acab61cf3f5de5.png', '2026-10-30 12:07:12', '2026-10-30 12:07:26'),
+(7, 18, 'Recur test', 'recurring', 15, 'CP', 'Brand Awareness', 1, 22, 'Nilesh Prajapati', '2026-10-30 08:42:36', '2026-10-30 08:42:36', 'new', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -563,6 +601,12 @@ ALTER TABLE `sme_company_assignments`
   ADD KEY `idx_sme_user_id` (`sme_user_id`);
 
 --
+-- Indexes for table `sme_fathom_sync`
+--
+ALTER TABLE `sme_fathom_sync`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `sme_meetings`
 --
 ALTER TABLE `sme_meetings`
@@ -576,6 +620,14 @@ ALTER TABLE `sme_meetings`
 ALTER TABLE `sme_meeting_attendees`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_meeting` (`meeting_id`);
+
+--
+-- Indexes for table `sme_meeting_recordings`
+--
+ALTER TABLE `sme_meeting_recordings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_user_recording` (`sme_user_id`,`recording_id`),
+  ADD KEY `idx_user_started` (`sme_user_id`,`started_at`);
 
 --
 -- Indexes for table `sme_sop_completions`
@@ -634,7 +686,7 @@ ALTER TABLE `company_sops`
 -- AUTO_INCREMENT for table `creatives`
 --
 ALTER TABLE `creatives`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `creative_des_assignments`
@@ -673,6 +725,12 @@ ALTER TABLE `sme_meeting_attendees`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `sme_meeting_recordings`
+--
+ALTER TABLE `sme_meeting_recordings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `sme_sop_completions`
 --
 ALTER TABLE `sme_sop_completions`
@@ -688,7 +746,7 @@ ALTER TABLE `sme_taskmaster_items`
 -- AUTO_INCREMENT for table `task_board_tasks`
 --
 ALTER TABLE `task_board_tasks`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `users`

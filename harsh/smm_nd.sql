@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 30, 2026 at 08:43 AM
+-- Generation Time: Oct 30, 2026 at 10:39 AM
 -- Server version: 10.11.16-MariaDB
 -- PHP Version: 8.5.12
 
@@ -160,6 +160,17 @@ CREATE TABLE `sme_company_assignments` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `sme_fathom_sync`
+--
+
+CREATE TABLE `sme_fathom_sync` (
+  `id` tinyint(4) NOT NULL,
+  `last_synced_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `sme_meetings`
 --
 
@@ -199,6 +210,28 @@ CREATE TABLE `sme_meeting_attendees` (
   `name` varchar(150) NOT NULL,
   `designation` varchar(150) NOT NULL DEFAULT '',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sme_meeting_recordings`
+--
+
+CREATE TABLE `sme_meeting_recordings` (
+  `id` int(11) NOT NULL,
+  `sme_user_id` int(11) NOT NULL,
+  `recording_id` varchar(64) NOT NULL,
+  `meeting_id` int(11) DEFAULT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `started_at` datetime DEFAULT NULL,
+  `ended_at` datetime DEFAULT NULL,
+  `recording_url` varchar(2048) NOT NULL DEFAULT '',
+  `share_url` varchar(2048) NOT NULL DEFAULT '',
+  `summary` mediumtext DEFAULT NULL,
+  `action_items` mediumtext DEFAULT NULL,
+  `invitees` mediumtext DEFAULT NULL,
+  `synced_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -248,6 +281,8 @@ CREATE TABLE `task_board_tasks` (
   `id` int(10) UNSIGNED NOT NULL,
   `company_id` int(11) NOT NULL,
   `task_title` varchar(255) NOT NULL,
+  `task_category` enum('one_time','recurring') NOT NULL DEFAULT 'one_time',
+  `recurring_interval` int(11) DEFAULT NULL,
   `task_type` enum('Strategy/Pitch Deck','Moodboard','Shoots','CP','Content Writing','Influencer') NOT NULL,
   `objective` enum('Brand Awareness','Lead Generation','Positioning','Others') NOT NULL,
   `is_priority` tinyint(1) NOT NULL DEFAULT 0,
@@ -363,6 +398,12 @@ ALTER TABLE `sme_company_assignments`
   ADD KEY `idx_sme_user_id` (`sme_user_id`);
 
 --
+-- Indexes for table `sme_fathom_sync`
+--
+ALTER TABLE `sme_fathom_sync`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `sme_meetings`
 --
 ALTER TABLE `sme_meetings`
@@ -376,6 +417,14 @@ ALTER TABLE `sme_meetings`
 ALTER TABLE `sme_meeting_attendees`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_meeting` (`meeting_id`);
+
+--
+-- Indexes for table `sme_meeting_recordings`
+--
+ALTER TABLE `sme_meeting_recordings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_user_recording` (`sme_user_id`,`recording_id`),
+  ADD KEY `idx_user_started` (`sme_user_id`,`started_at`);
 
 --
 -- Indexes for table `sme_sop_completions`
@@ -470,6 +519,12 @@ ALTER TABLE `sme_meetings`
 -- AUTO_INCREMENT for table `sme_meeting_attendees`
 --
 ALTER TABLE `sme_meeting_attendees`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `sme_meeting_recordings`
+--
+ALTER TABLE `sme_meeting_recordings`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
