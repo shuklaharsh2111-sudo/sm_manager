@@ -2,7 +2,7 @@
 <?php
 /*
 |--------------------------------------------------------------------------
-| SME COMPANY COMPARISON
+| SME COMPANY HEALTH
 |--------------------------------------------------------------------------
 | This file is included inside sme/dashboard.php.
 | Only the logged-in SME's assigned companies are displayed.
@@ -122,15 +122,38 @@ if ($bhStmt) {
                 ? (int) round($approved / $total * 100)
                 : 0;
 
+            // Health: judged on delays and on the approval rate of reviewed
+            // creatives (approved / (approved + redo + rejected)).
+            $reviewed = $approved + $redo + $rejected;
+            $reviewedRate = $reviewed > 0 ? $approved / $reviewed * 100 : null;
+            $delayed = $bhRow['delay_count'];
+            if ($total === 0) {
+                $bhRow['health'] = 'nodata';
+                $bhRow['health_label'] = 'No data';
+                $bhRow['health_note'] = 'No creatives yet';
+            } elseif ($delayed >= 3 || ($reviewedRate !== null && $reviewedRate < 40)) {
+                $bhRow['health'] = 'critical';
+                $bhRow['health_label'] = 'Critical';
+                $bhRow['health_note'] = '3+ delayed creatives or under 40% approved';
+            } elseif ($delayed > 0 || ($reviewedRate !== null && $reviewedRate < 70)) {
+                $bhRow['health'] = 'risk';
+                $bhRow['health_label'] = 'At Risk';
+                $bhRow['health_note'] = 'Some delays or under 70% approved';
+            } else {
+                $bhRow['health'] = 'healthy';
+                $bhRow['health_label'] = 'Healthy';
+                $bhRow['health_note'] = 'On time and 70%+ approved';
+            }
+
             $bhRows[] = $bhRow;
         }
     } else {
-        $bhError = 'Unable to load company comparison.';
+        $bhError = 'Unable to load company health.';
     }
 
     $bhStmt->close();
 } else {
-    $bhError = 'Unable to prepare the company comparison query.';
+    $bhError = 'Unable to prepare the company health query.';
 }
 
 $bhTotalCreatives = array_sum(array_column($bhRows, 'total_creatives'));
@@ -138,7 +161,14 @@ $bhTotalApproved  = array_sum(array_column($bhRows, 'approved_count'));
 $bhTotalDelayed   = array_sum(array_column($bhRows, 'delay_count'));
 ?>
 
-<link rel="stylesheet" href="../assets/css/bh.css">
+<?php
+$bhVersion = static function (string $relative): string {
+    $file = __DIR__ . '/../assets/' . $relative;
+    return '../assets/' . $relative . '?v=' . (is_file($file) ? filemtime($file) : time());
+};
+?>
+<link rel="stylesheet" href="<?php echo bhEscape($bhVersion('css/bh.css')); ?>">
+<link rel="stylesheet" href="<?php echo bhEscape($bhVersion('css/bhhealth.css')); ?>">
 
 <section class="bh-report" id="companyComparison">
 
@@ -149,11 +179,11 @@ $bhTotalDelayed   = array_sum(array_column($bhRows, 'delay_count'));
                 SME WORKSPACE
             </div>
 
-            <h2>Company <span>Comparison</span></h2>
+            <h2>Company <span>Health</span></h2>
 
             <p>
-                Compare approvals, redo requests, rejections and delays
-                across your assigned companies.
+                Track approvals, redo requests, rejections and delays
+                to see how healthy each assigned company is.
             </p>
         </div>
 
@@ -227,6 +257,7 @@ $bhTotalDelayed   = array_sum(array_column($bhRows, 'delay_count'));
                             <th>REJECTED</th>
                             <th>DELAYED</th>
                             <th>APPROVAL</th>
+                            <th>HEALTH</th>
                         </tr>
                     </thead>
 
@@ -234,7 +265,7 @@ $bhTotalDelayed   = array_sum(array_column($bhRows, 'delay_count'));
                     <?php if (empty($bhRows)): ?>
 
                         <tr>
-                            <td colspan="8" class="bh-empty">
+                            <td colspan="9" class="bh-empty">
                                 <span class="bh-empty-icon">◇</span>
                                 <strong>No assigned companies yet</strong>
                                 <p>
@@ -296,6 +327,11 @@ $bhTotalDelayed   = array_sum(array_column($bhRows, 'delay_count'));
                                 <td data-col="approval">
                                     <span class="bh-number"><?php echo $bhRow['approval_rate']; ?>%</span>
                                 </td>
+                                <td data-col="health">
+                                    <span class="bh-status bh-status-<?php echo bhEscape($bhRow['health']); ?>" title="<?php echo bhEscape($bhRow['health_note']); ?>">
+                                        <span class="bh-status-dot"></span><?php echo bhEscape($bhRow['health_label']); ?>
+                                    </span>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
 
@@ -321,4 +357,4 @@ $bhTotalDelayed   = array_sum(array_column($bhRows, 'delay_count'));
 
 </section>
 
-<script src="../assets/js/bh.js" defer></script>
+<script src="<?php echo bhEscape($bhVersion('js/bh.js')); ?>" defer></script>

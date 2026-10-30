@@ -84,37 +84,7 @@ $smeSops = [
     'monthly' => []
 ];
 try {
-    $sopSql = "
-        SELECT
-            cs.id,
-            cs.company_id,
-            c.comp_name,
-            cs.sop_type,
-            cs.sop_title,
-            cs.sop_description,
-            cs.sop_date
-        FROM company_sops AS cs
-        INNER JOIN companies AS c
-            ON c.id = cs.company_id
-        INNER JOIN sme_company_assignments AS sca
-            ON sca.company_id = c.id
-        WHERE sca.sme_user_id = ?
-        ORDER BY
-            FIELD(cs.sop_type, 'daily', 'weekly', 'monthly'),
-            cs.sop_date ASC,
-            cs.id ASC
-    ";
-    $sopStmt = $conn->prepare($sopSql);
-    $sopStmt->bind_param('i', $userId);
-    $sopStmt->execute();
-    $sopResult = $sopStmt->get_result();
-    while ($sop = $sopResult->fetch_assoc()) {
-        $type = strtolower(trim((string) $sop['sop_type']));
-        if (isset($smeSops[$type])) {
-            $smeSops[$type][] = $sop;
-        }
-    }
-    $sopStmt->close();
+    $smeSops = smeSopFetchAssigned($conn, (int) $userId);
 } catch (Throwable $exception) {
     error_log(
         'SME SOP query error: ' . $exception->getMessage()
@@ -251,8 +221,17 @@ try {
 
 
 ?>
-<link rel="stylesheet" type="text/css" href="../assets/css/smedashboard.css">
-<link rel="stylesheet" type="text/css" href="../assets/css/smecal.css">
+<?php
+// ?v=<file time> makes the browser fetch the new file after every edit (no stale cache).
+$smeAssetVersion = static function (string $relative): string {
+    $file = __DIR__ . '/../assets/' . $relative;
+    return '../assets/' . $relative . '?v=' . (is_file($file) ? filemtime($file) : time());
+};
+?>
+<link rel="stylesheet" type="text/css" href="<?= escapeSmeDashboard($smeAssetVersion('css/smedashboard.css')) ?>">
+<link rel="stylesheet" type="text/css" href="<?= escapeSmeDashboard($smeAssetVersion('css/smecal.css')) ?>">
+<link rel="stylesheet" type="text/css" href="<?= escapeSmeDashboard($smeAssetVersion('css/smesop.css')) ?>">
+<link rel="stylesheet" type="text/css" href="<?= escapeSmeDashboard($smeAssetVersion('css/smemeetings.css')) ?>">
 <section class="sme-dashboard" id="smeDashboard">
     <section
         class="sme-companies-section"
@@ -344,7 +323,7 @@ try {
             <div class="sme-sops-heading sme-sops-heading-row">
                 <div>
                     <h2>Your SOPs</h2>
-                    <p>Tick a SOP when it is done. Daily ticks refresh every day and weekly ticks every week.</p>
+                    <p>SOPs assigned to you by the admin. Tick one when it is done. Daily ticks refresh every day, weekly every week, monthly every month.</p>
                 </div>
                 <a class="sme-sop-saved-link" href="sme.php?page=saved">
                     <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
@@ -352,104 +331,12 @@ try {
                 </a>
             </div>
             <p class="sme-sop-toast" id="sopToast" role="status" aria-live="polite"></p>
-            <div class="sme-sops-layout">
-                <?php
-                $sopCategories = [
-                    'daily' => 'Daily SOPs',
-                    'weekly' => 'Weekly SOPs',
-                    'monthly' => 'Monthly SOPs'
-                ];
-                ?>
-                <?php foreach ($sopCategories as $type => $categoryTitle): ?>
-                    <?php
-                    $boxTotal = count($smeSops[$type] ?? []);
-                    $boxDone = 0;
-                    foreach ($smeSops[$type] ?? [] as $countSop) {
-                        if (isset($sopDone[(int) $countSop['id']])) {
-                            $boxDone++;
-                        }
-                    }
-                    ?>
-                    <div class="sme-sop-box" data-sop-type="<?= escapeSmeDashboard($type) ?>">
-                        <div class="sme-sop-box-header">
-                            <h3 class="sme-sop-category-title">
-                                <?= htmlspecialchars($categoryTitle, ENT_QUOTES, 'UTF-8'); ?>
-                            </h3>
-                            <span class="sme-sop-count" title="Done / total <?= escapeSmeDashboard(smeSopPeriodLabel($type)) ?>">
-                                <span class="sme-sop-done-count"><?= $boxDone ?></span>/<?= $boxTotal ?>
-                            </span>
-                        </div>
-                        <div class="sme-sop-list">
-                            <?php if (!empty($sopErrorMessage)): ?>
-                                <p class="sme-sop-empty">
-                                    <?= htmlspecialchars($sopErrorMessage, ENT_QUOTES, 'UTF-8'); ?>
-                                </p>
-                            <?php elseif (!empty($smeSops[$type])): ?>
-                                <?php foreach ($smeSops[$type] as $sop): ?>
-                                    <?php $isDone = isset($sopDone[(int) $sop['id']]); ?>
-                                    <article class="sme-sop-item<?= $isDone ? ' is-done' : '' ?>">
-                                        <label class="sme-sop-check">
-                                            <input
-                                                type="checkbox"
-                                                class="sme-sop-checkbox"
-                                                data-sop-id="<?= (int) $sop['id'] ?>"
-                                                aria-label="Mark SOP as done <?= escapeSmeDashboard(smeSopPeriodLabel($type)) ?>"
-                                                <?= $isDone ? 'checked' : '' ?>>
-                                            <span class="sme-sop-tick" aria-hidden="true">
-                                                <i class="fa-solid fa-check"></i>
-                                            </span>
-                                            <h4 class="sme-sop-title">
-                                                <?= htmlspecialchars(
-                                                    $sop['sop_title'] ?? 'Untitled SOP',
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                ); ?>
-                                            </h4>
-                                        </label>
-                                        <p class="sme-sop-company">
-                                            <?= htmlspecialchars(
-                                                $sop['comp_name'] ?? 'Unknown Company',
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ); ?>
-                                        </p>
-                                        <?php if (!empty($sop['sop_description'])): ?>
-                                            <p class="sme-sop-description">
-                                                <?= nl2br(htmlspecialchars(
-                                                    $sop['sop_description'],
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                )); ?>
-                                            </p>
-                                        <?php endif; ?>
-                                        <?php if (!empty($sop['sop_date'])): ?>
-                                            <p class="sme-sop-date">
-                                                <span>Date:</span>
-                                                <?= htmlspecialchars(
-                                                    date('d M Y', strtotime($sop['sop_date'])),
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                ); ?>
-                                            </p>
-                                        <?php endif; ?>
-                                        <p class="sme-sop-saved-note" <?= $isDone ? '' : 'hidden' ?>>
-                                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
-                                            Saved <?= escapeSmeDashboard(smeSopPeriodLabel($type)) ?><span class="sme-sop-saved-time"><?php
-                                                if ($isDone) {
-                                                    echo ' · ' . escapeSmeDashboard(date('h:i A', strtotime((string) $sopDone[(int) $sop['id']])));
-                                                }
-                                            ?></span>
-                                        </p>
-                                    </article>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <p class="sme-sop-empty">
-                                    No <?= strtolower($categoryTitle); ?> assigned yet.
-                                </p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+            <div class="sme-sops-layout" id="smeSopsTabs">
+                <?php if ($sopErrorMessage !== ''): ?>
+                    <p class="sme-sop-empty"><?= escapeSmeDashboard($sopErrorMessage) ?></p>
+                <?php else: ?>
+                    <?= smeSopRenderTabs($smeSops, $sopDone, 'daily') ?>
+                <?php endif; ?>
             </div>
         </section>
         <!-- Upcoming Meetings Section -->
@@ -603,5 +490,6 @@ try {
 <?php require_once __DIR__ . '/taskmaster.php'; ?>
 <?php require_once __DIR__ . '/bh.php'; ?>
 
-<script src="../assets/js/smedashboard.js" defer></script>
-<script src="../assets/js/smecal.js" defer></script>
+<script src="<?= escapeSmeDashboard($smeAssetVersion('js/smedashboard.js')) ?>" defer></script>
+<script src="<?= escapeSmeDashboard($smeAssetVersion('js/smecal.js')) ?>" defer></script>
+<script src="<?= escapeSmeDashboard($smeAssetVersion('js/smesop.js')) ?>" defer></script>

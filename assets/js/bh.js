@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const lines = [
-                ["Company", "Total", "Approved", "Pending", "Redo", "Rejected", "Delayed", "Approval %"]
+                ["Company", "Total", "Approved", "Pending", "Redo", "Rejected", "Delayed", "Approval %", "Health"]
                     .map(csvEscape).join(",")
             ];
 
@@ -99,7 +99,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     cellNumber(row, "revision"),
                     cellNumber(row, "rejected"),
                     cellNumber(row, "delayed"),
-                    cellText(row, "approval").replace("%", "")
+                    cellText(row, "approval").replace("%", ""),
+                    cellText(row, "health")
                 ].map(csvEscape).join(","));
             });
 
@@ -110,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const link = document.createElement("a");
 
             link.href = url;
-            link.download = "company-comparison.csv";
+            link.download = "company-health.csv";
             document.body.appendChild(link);
             link.click();
             link.remove();

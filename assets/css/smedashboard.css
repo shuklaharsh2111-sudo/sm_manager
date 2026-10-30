@@ -254,11 +254,8 @@
     font-size: 0.88rem;
 }
 .sme-sops-layout {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    display: block;
     width: 100%;
-    align-items: start;
 }
 .sme-sop-box {
     min-width: 0;
@@ -354,16 +351,6 @@
     font-size: 12px;
     line-height: 1.5;
     text-align: center;
-}
-@media (max-width: 1000px) {
-    .sme-sops-layout {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-@media (max-width: 650px) {
-    .sme-sops-layout {
-        grid-template-columns: 1fr;
-    }
 }
 .sme-sops-meetings-layout {
     display: grid;

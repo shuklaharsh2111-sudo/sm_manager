@@ -20,7 +20,9 @@ function sopOut(int $status, array $data): void
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+$isListRequest = $_SERVER['REQUEST_METHOD'] === 'GET'
+    && (string) ($_GET['action'] ?? '') === 'list';
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !$isListRequest) {
     sopOut(405, ['success' => false, 'message' => 'Invalid request.']);
 }
 $userId = filter_var($_SESSION['user_id'] ?? null, FILTER_VALIDATE_INT);
@@ -34,6 +36,28 @@ if (is_array($sessionRole)) {
 $roles = array_map(static fn($r) => strtolower(trim((string) $r)), $roles);
 if (!$userId || !in_array('sme', $roles, true)) {
     sopOut(401, ['success' => false, 'message' => 'Session expired. Please log in again.']);
+}
+
+// GET ?action=list : fresh SOP boxes (used by the dashboard auto-refresh, so SOPs
+// the admin assigns show up without reloading the page).
+if ($isListRequest) {
+    require_once __DIR__ . '/../config/db.php';
+    require_once __DIR__ . '/sop_helpers.php';
+    smeSopTimezone();
+    try {
+        smeSopEnsureTable($conn);
+        $active = (string) ($_GET['active'] ?? 'daily');
+        $sops = smeSopFetchAssigned($conn, (int) $userId);
+        $done = smeSopFetchCurrentDone($conn, (int) $userId);
+        sopOut(200, [
+            'success' => true,
+            'html' => smeSopRenderTabs($sops, $done, $active),
+            'total' => count($sops['daily']) + count($sops['weekly']) + count($sops['monthly']),
+        ]);
+    } catch (Throwable $e) {
+        error_log('SME SOP list error: ' . $e->getMessage());
+        sopOut(500, ['success' => false, 'message' => 'Unable to load SOPs.']);
+    }
 }
 
 $token = (string) ($_POST['csrf_token'] ?? '');
