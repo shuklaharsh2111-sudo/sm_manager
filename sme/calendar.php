@@ -387,7 +387,7 @@ $csrfToken = $_SESSION['calendar_csrf_token'];
 <body class="calendar-standalone">
 <?php else: ?>
 <?php /* Included inside sme.php: output a fragment only (no second <html>/<body>). */ ?>
-<link rel="stylesheet" href="../assets/css/calendar.css">
+<link rel="stylesheet" href="css/calendar.css">
 <?php endif; ?>
     <div class="calendar-page" id="calendarPage">
         <div class="calendar-app">
@@ -609,7 +609,7 @@ $csrfToken = $_SESSION['calendar_csrf_token'];
 
         <div class="toast-container" id="toastContainer" aria-live="polite"></div>
     </div>
-    <script src="../assets/js/calendar.js" defer></script>
+    <script src="js/calendar.js" defer></script>
 <?php if ($isDirectCalendarRequest): ?>
 </body>
 
