@@ -68,6 +68,222 @@ if ($taskBoardUserName === '') {
 if ($taskBoardUserName === '') {
     $taskBoardUserName = 'User #' . $taskBoardUserId;
 }
+/* ==========================================
+   TASK BOARD - START / UPLOAD / END ACTIONS
+========================================== */
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && in_array(
+        $_POST['taskboard_action'] ?? '',
+        ['start', 'upload_start_file', 'end'],
+        true
+    )
+) {
+    $action = $_POST['taskboard_action'];
+    $sessionToken = $_SESSION['taskboard_csrf'] ?? '';
+    $postedToken = $_POST['taskboard_csrf'] ?? '';
+    if (
+        !is_string($postedToken) ||
+        !is_string($sessionToken) ||
+        $sessionToken === '' ||
+        !hash_equals($sessionToken, $postedToken)
+    ) {
+        $tbRespond(403, [
+            'success' => false,
+            'message' => 'Security token expired. Refresh and try again.'
+        ]);
+    }
+    $taskId = filter_var(
+        $_POST['task_id'] ?? null,
+        FILTER_VALIDATE_INT
+    );
+    if (!$taskId || $taskId < 1) {
+        $tbRespond(422, [
+            'success' => false,
+            'message' => 'Invalid task.'
+        ]);
+    }
+    // Verify task belongs to an assigned company.
+    $checkStmt = $conn->prepare(
+        "SELECT t.id, t.task_status
+         FROM task_board_tasks t
+         INNER JOIN sme_company_assignments sca
+            ON sca.company_id = t.company_id
+           AND sca.sme_user_id = ?
+         WHERE t.id = ?
+         LIMIT 1"
+    );
+    if (!$checkStmt) {
+        $tbRespond(500, [
+            'success' => false,
+            'message' => 'Unable to verify task.'
+        ]);
+    }
+    $checkStmt->bind_param(
+        'ii',
+        $taskBoardUserId,
+        $taskId
+    );
+    $checkStmt->execute();
+    $checkStmt->bind_result($verifiedTaskId, $currentStatus);
+    $taskExists = $checkStmt->fetch();
+    $checkStmt->close();
+    if (!$taskExists) {
+        $tbRespond(404, [
+            'success' => false,
+            'message' => 'Task not found.'
+        ]);
+    }
+    // START TASK
+    if ($action === 'start') {
+        if ($currentStatus !== 'new') {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'This task has already been started.'
+            ]);
+        }
+        $stmt = $conn->prepare(
+            "UPDATE task_board_tasks
+             SET task_status = 'in_progress',
+                 started_at = NOW()
+             WHERE id = ?
+               AND task_status = 'new'"
+        );
+        $stmt->bind_param('i', $taskId);
+        if (!$stmt->execute() || $stmt->affected_rows !== 1) {
+            $stmt->close();
+            $tbRespond(500, [
+                'success' => false,
+                'message' => 'Unable to start task.'
+            ]);
+        }
+        $stmt->close();
+        $tbRespond(200, [
+            'success' => true,
+            'message' => 'Task started successfully!'
+        ]);
+    }
+    // UPLOAD FILE
+    if ($action === 'upload_start_file') {
+        if ($currentStatus !== 'in_progress') {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'Start the task before uploading files.'
+            ]);
+        }
+        if (
+            !isset($_FILES['start_file']) ||
+            $_FILES['start_file']['error'] !== UPLOAD_ERR_OK
+        ) {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'Please select a valid file.'
+            ]);
+        }
+        $file = $_FILES['start_file'];
+        if ($file['size'] > 10 * 1024 * 1024) {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'Maximum file size is 10 MB.'
+            ]);
+        }
+        $allowedExtensions = [
+            'pdf',
+            'doc',
+            'docx',
+            'xls',
+            'xlsx',
+            'ppt',
+            'pptx',
+            'jpg',
+            'jpeg',
+            'png',
+            'webp'
+        ];
+        $extension = strtolower(
+            pathinfo($file['name'], PATHINFO_EXTENSION)
+        );
+        if (!in_array($extension, $allowedExtensions, true)) {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'File type is not allowed.'
+            ]);
+        }
+        $uploadDirectory = dirname(__DIR__) . '/uploads/task_board/';
+        if (
+            !is_dir($uploadDirectory) &&
+            !mkdir($uploadDirectory, 0755, true)
+        ) {
+            $tbRespond(500, [
+                'success' => false,
+                'message' => 'Unable to create upload directory.'
+            ]);
+        }
+        $fileName = bin2hex(random_bytes(16)) . '.' . $extension;
+        $absolutePath = $uploadDirectory . $fileName;
+        $relativePath = '../uploads/task_board/' . $fileName;
+        if (!move_uploaded_file($file['tmp_name'], $absolutePath)) {
+            $tbRespond(500, [
+                'success' => false,
+                'message' => 'File upload failed.'
+            ]);
+        }
+        $stmt = $conn->prepare(
+            "UPDATE task_board_tasks
+             SET start_file = ?
+             WHERE id = ?
+               AND task_status = 'in_progress'"
+        );
+        $stmt->bind_param(
+            'si',
+            $relativePath,
+            $taskId
+        );
+        if (!$stmt->execute()) {
+            $stmt->close();
+            @unlink($absolutePath);
+            $tbRespond(500, [
+                'success' => false,
+                'message' => 'Unable to save uploaded file.'
+            ]);
+        }
+        $stmt->close();
+        $tbRespond(200, [
+            'success' => true,
+            'message' => 'File uploaded successfully!',
+            'start_file' => $relativePath
+        ]);
+    }
+    // END TASK
+    if ($action === 'end') {
+        if ($currentStatus !== 'in_progress') {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'Only tasks in progress can be completed.'
+            ]);
+        }
+        $stmt = $conn->prepare(
+            "UPDATE task_board_tasks
+             SET task_status = 'completed',
+                 completed_at = NOW()
+             WHERE id = ?
+               AND task_status = 'in_progress'"
+        );
+        $stmt->bind_param('i', $taskId);
+        if (!$stmt->execute() || $stmt->affected_rows !== 1) {
+            $stmt->close();
+            $tbRespond(500, [
+                'success' => false,
+                'message' => 'Unable to complete task.'
+            ]);
+        }
+        $stmt->close();
+        $tbRespond(200, [
+            'success' => true,
+            'message' => 'Task completed successfully!'
+        ]);
+    }
+}
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
     && ($_POST['taskboard_action'] ?? '') === 'create'
@@ -507,33 +723,10 @@ if (!$tasksStmt) {
                                         type="button"
                                         class="task-action-btn task-start-btn"
                                         data-task-action="start"
-                                        data-task-id="<?= (int) $task['id'] ?>">
+                                        data-task-id="<?= (int) $task['id'] ?>"
+                                        title="Start Task"
+                                        aria-label="Start Task">
                                         <i class="fa-solid fa-play"></i>
-                                        Start
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="task-action-btn task-upload-btn"
-                                        data-task-action="upload"
-                                        data-task-id="<?= (int) $task['id'] ?>"
-                                        title="Upload start file"
-                                        aria-label="Upload start file">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </button>
-                                    <input
-                                        type="file"
-                                        hidden
-                                        data-task-file-input
-                                        data-task-id="<?= (int) $task['id'] ?>"
-                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
-                                    <button
-                                        type="button"
-                                        class="task-action-btn task-end-btn"
-                                        data-task-action="end"
-                                        data-task-id="<?= (int) $task['id'] ?>"
-                                        disabled>
-                                        <i class="fa-solid fa-flag-checkered"></i>
-                                        End
                                     </button>
                                 </div>
                             </article>
@@ -612,18 +805,11 @@ if (!$tasksStmt) {
                                 <div class="task-actions">
                                     <button
                                         type="button"
-                                        class="task-action-btn task-start-btn"
-                                        disabled>
-                                        <i class="fa-solid fa-play"></i>
-                                        Started
-                                    </button>
-                                    <button
-                                        type="button"
                                         class="task-action-btn task-upload-btn"
                                         data-task-action="upload"
                                         data-task-id="<?= (int) $task['id'] ?>"
-                                        title="Upload start file"
-                                        aria-label="Upload start file">
+                                        title="Add File"
+                                        aria-label="Add File">
                                         <i class="fa-solid fa-plus"></i>
                                     </button>
                                     <input
@@ -636,9 +822,10 @@ if (!$tasksStmt) {
                                         type="button"
                                         class="task-action-btn task-end-btn"
                                         data-task-action="end"
-                                        data-task-id="<?= (int) $task['id'] ?>">
+                                        data-task-id="<?= (int) $task['id'] ?>"
+                                        title="End Task"
+                                        aria-label="End Task">
                                         <i class="fa-solid fa-flag-checkered"></i>
-                                        End
                                     </button>
                                 </div>
                             </article>

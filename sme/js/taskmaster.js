@@ -63,11 +63,37 @@
                         const startButton = taskItem.querySelector(
                             '[data-task-action="start"]'
                         );
-                        if (startButton) {
-                            startButton.disabled = true;
-                            startButton.innerHTML =
-                                '<i class="fa-solid fa-play"></i> Started';
+                        const actions = taskItem.querySelector('.task-actions');
+                        if (actions) {
+                            actions.innerHTML = `
+                                <button
+                                    type="button"
+                                    class="task-action-btn task-upload-btn"
+                                    data-task-action="upload"
+                                    data-task-id="${taskId}"
+                                    title="Add File"
+                                    aria-label="Add File">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                                <input
+                                    type="file"
+                                    hidden
+                                    data-task-file-input
+                                    data-task-id="${taskId}"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
+                                <button
+                                    type="button"
+                                    class="task-action-btn task-end-btn"
+                                    data-task-action="end"
+                                    data-task-id="${taskId}"
+                                    title="End Task"
+                                    aria-label="End Task">
+                                    <i class="fa-solid fa-flag-checkered"></i>
+                                </button>
+                            `;
                         }
+                        taskItem.dataset.taskStatus = 'in_progress';
+                        wipTaskList.prepend(taskItem);
                         const endButton = taskItem.querySelector(
                             '[data-task-action="end"]'
                         );
@@ -299,7 +325,20 @@
                 year: "numeric"
             });
             footer.append(creator, date);
-            article.append(top, meta, footer);
+            const actions = document.createElement("div");
+            actions.className = "task-actions";
+            const startButton = document.createElement("button");
+            startButton.type = "button";
+            startButton.className = "task-action-btn task-start-btn";
+            startButton.dataset.taskAction = "start";
+            startButton.dataset.taskId = String(task.id);
+            startButton.title = "Start Task";
+            startButton.setAttribute("aria-label", "Start Task");
+            const startIcon = document.createElement("i");
+            startIcon.className = "fa-solid fa-play";
+            startButton.appendChild(startIcon);
+            actions.appendChild(startButton);
+            article.append(top, meta, footer, actions);
             taskList.prepend(article);
         }
         form.addEventListener("submit", async function (event) {
