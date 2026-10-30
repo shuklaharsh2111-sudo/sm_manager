@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const lines = [
-                ["Company", "Total", "Approved", "Pending", "Redo", "Rejected", "Delayed", "Approval %", "Health"]
+                ["Company", "Total", "Approved", "Pending", "Redo", "Rejected", "Delays", "Overdue", "Approval %", "Health"]
                     .map(csvEscape).join(",")
             ];
 
@@ -99,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     cellNumber(row, "revision"),
                     cellNumber(row, "rejected"),
                     cellNumber(row, "delayed"),
+                    cellNumber(row, "overdue"),
                     cellText(row, "approval").replace("%", ""),
                     cellText(row, "health")
                 ].map(csvEscape).join(","));
