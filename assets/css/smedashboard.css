@@ -254,11 +254,8 @@
     font-size: 0.88rem;
 }
 .sme-sops-layout {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    display: block;
     width: 100%;
-    align-items: start;
 }
 .sme-sop-box {
     min-width: 0;
@@ -354,16 +351,6 @@
     font-size: 12px;
     line-height: 1.5;
     text-align: center;
-}
-@media (max-width: 1000px) {
-    .sme-sops-layout {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-@media (max-width: 650px) {
-    .sme-sops-layout {
-        grid-template-columns: 1fr;
-    }
 }
 .sme-sops-meetings-layout {
     display: grid;
@@ -963,3 +950,129 @@
     transform: none;
 }
 .sme-mom-form .sme-mt-section { margin: 0; }
+
+
+/* ==========================================================================
+   SOP tick marks + link to the Saved page
+   ========================================================================== */
+.sme-sops-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.sme-sop-saved-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    color: #c084fc;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.sme-sop-saved-link:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.sme-sop-toast {
+    min-height: 0;
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: #34d399;
+}
+
+.sme-sop-toast:empty {
+    display: none;
+}
+
+.sme-sop-toast.is-error {
+    color: var(--error-text);
+}
+
+.sme-sop-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 6px;
+    cursor: pointer;
+}
+
+.sme-sop-check .sme-sop-title {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sme-sop-checkbox {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sme-sop-tick {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border: 2px solid var(--text-muted);
+    border-radius: 6px;
+    color: transparent;
+    font-size: 11px;
+    box-sizing: border-box;
+    transition: var(--transition);
+}
+
+.sme-sop-check:hover .sme-sop-tick {
+    border-color: var(--accent-purple);
+}
+
+.sme-sop-checkbox:focus-visible + .sme-sop-tick {
+    outline: 2px solid var(--accent-purple);
+    outline-offset: 2px;
+}
+
+.sme-sop-checkbox:checked + .sme-sop-tick {
+    background: #34d399;
+    border-color: #34d399;
+    color: #052e22;
+}
+
+.sme-sop-item.is-busy {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.sme-sop-item.is-done {
+    border-color: rgba(52, 211, 153, 0.35);
+}
+
+.sme-sop-item.is-done .sme-sop-title {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+    text-decoration-color: rgba(52, 211, 153, 0.6);
+}
+
+.sme-sop-saved-note {
+    margin: 8px 0 0;
+    color: #34d399;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.sme-sop-saved-note[hidden] {
+    display: none;
+}

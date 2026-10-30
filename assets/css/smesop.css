@@ -1,0 +1,264 @@
+/* ==========================================================================
+   SME "Your SOPs": one box + Daily / Weekly / Monthly toggle
+   Self-contained (no CSS variables needed), loaded after smedashboard.css.
+   ========================================================================== */
+#smeSopsSection {
+    --sop-text: #f3f4f6;
+    --sop-muted: #9ca3af;
+    --sop-dim: #6b7280;
+    --sop-border: rgba(99, 102, 241, 0.25);
+    --sop-border-hover: rgba(168, 85, 247, 0.5);
+    --sop-accent: #a855f7;
+    --sop-green: #34d399;
+}
+
+#smeSopsSection .sme-sops-layout {
+    display: block;
+    width: 100%;
+}
+
+/* ---- toggle ---- */
+#smeSopsSection .sme-sop-toggle {
+    display: flex;
+    gap: 6px;
+    padding: 5px;
+    margin: 0 0 18px;
+    background: rgba(11, 15, 25, 0.75);
+    border: 1px solid var(--sop-border);
+    border-radius: 999px;
+    box-sizing: border-box;
+}
+
+#smeSopsSection .sme-sop-toggle-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 14px;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: var(--sop-muted);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#smeSopsSection .sme-sop-toggle-btn:hover {
+    color: var(--sop-text);
+    background: rgba(99, 102, 241, 0.12);
+}
+
+#smeSopsSection .sme-sop-toggle-btn:focus-visible {
+    outline: 2px solid var(--sop-accent);
+    outline-offset: 2px;
+}
+
+#smeSopsSection .sme-sop-toggle-btn.is-active {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+/* ---- done / total pill ---- */
+#smeSopsSection .sme-sop-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 22px;
+    padding: 0 8px;
+    background: rgba(99, 102, 241, 0.18);
+    border: 1px solid var(--sop-border);
+    border-radius: 999px;
+    color: #c084fc;
+    font-size: 12px;
+    font-weight: 600;
+    box-sizing: border-box;
+}
+
+#smeSopsSection .sme-sop-toggle-btn.is-active .sme-sop-count {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+}
+
+/* ---- panels ---- */
+#smeSopsSection .sme-sop-panel[hidden] {
+    display: none !important;
+}
+
+#smeSopsSection .sme-sop-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+#smeSopsSection .sme-sop-item {
+    padding: 14px;
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid var(--sop-border);
+    border-radius: 10px;
+    overflow-wrap: anywhere;
+    transition: border-color 0.25s ease, opacity 0.25s ease;
+}
+
+#smeSopsSection .sme-sop-item:hover {
+    border-color: var(--sop-border-hover);
+}
+
+#smeSopsSection .sme-sop-item.is-busy {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+#smeSopsSection .sme-sop-item.is-done {
+    border-color: rgba(52, 211, 153, 0.4);
+}
+
+#smeSopsSection .sme-sop-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 6px;
+    cursor: pointer;
+}
+
+#smeSopsSection .sme-sop-checkbox {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#smeSopsSection .sme-sop-tick {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border: 2px solid var(--sop-dim);
+    border-radius: 6px;
+    color: transparent;
+    font-size: 11px;
+    box-sizing: border-box;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+#smeSopsSection .sme-sop-check:hover .sme-sop-tick {
+    border-color: var(--sop-accent);
+}
+
+#smeSopsSection .sme-sop-checkbox:focus-visible + .sme-sop-tick {
+    outline: 2px solid var(--sop-accent);
+    outline-offset: 2px;
+}
+
+#smeSopsSection .sme-sop-checkbox:checked + .sme-sop-tick {
+    background: var(--sop-green);
+    border-color: var(--sop-green);
+    color: #052e22;
+}
+
+#smeSopsSection .sme-sop-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    color: var(--sop-text);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+#smeSopsSection .sme-sop-item.is-done .sme-sop-title {
+    color: var(--sop-muted);
+    text-decoration: line-through;
+    text-decoration-color: rgba(52, 211, 153, 0.6);
+}
+
+#smeSopsSection .sme-sop-new {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    background: rgba(52, 211, 153, 0.15);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    border-radius: 999px;
+    color: var(--sop-green);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+#smeSopsSection .sme-sop-company {
+    margin: 0 0 6px 30px;
+    color: var(--sop-accent);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+#smeSopsSection .sme-sop-company i {
+    margin-right: 4px;
+    font-size: 11px;
+}
+
+#smeSopsSection .sme-sop-description {
+    margin: 0 0 8px 30px;
+    color: var(--sop-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#smeSopsSection .sme-sop-date {
+    margin: 0 0 0 30px;
+    color: var(--sop-dim);
+    font-size: 11px;
+}
+
+#smeSopsSection .sme-sop-date span {
+    color: var(--sop-muted);
+    font-weight: 600;
+}
+
+#smeSopsSection .sme-sop-saved-note {
+    margin: 8px 0 0 30px;
+    color: var(--sop-green);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+#smeSopsSection .sme-sop-saved-note[hidden] {
+    display: none;
+}
+
+#smeSopsSection .sme-sop-empty {
+    margin: 0;
+    padding: 26px 8px;
+    color: var(--sop-dim);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+    border: 1px dashed var(--sop-border);
+    border-radius: 10px;
+}
+
+@media (max-width: 480px) {
+    #smeSopsSection .sme-sop-toggle-btn {
+        padding: 9px 6px;
+        font-size: 13px;
+        gap: 5px;
+    }
+}

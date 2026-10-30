@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
             card.setAttribute("aria-label", companyName);
         }
     });
+    // SOP toggle / ticks / auto-refresh now live in smesop.js
     const meetingsSection = document.getElementById(
         "smeMeetingsSection"
     );

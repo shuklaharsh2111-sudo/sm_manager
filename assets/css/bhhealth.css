@@ -1,0 +1,14 @@
+/* Company Health: extra column styles (loaded after bh.css) */
+.bh-report .bh-status-nodata {
+    color: #929dbd;
+    background: rgba(146, 157, 189, .1);
+    border-color: rgba(146, 157, 189, .2);
+}
+
+.bh-report .bh-status-nodata .bh-status-dot {
+    background: #929dbd;
+}
+
+.bh-report .bh-table td[data-col="health"] {
+    white-space: nowrap;
+}

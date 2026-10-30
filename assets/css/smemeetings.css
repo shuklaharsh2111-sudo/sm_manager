@@ -1,0 +1,88 @@
+/* ==========================================================================
+   Upcoming Meetings: keep the card inside its column and scroll the list
+   instead of stretching the page. Loaded after smedashboard.css.
+   ========================================================================== */
+.sme-meetings-section {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.sme-meetings-section .sme-meeting-card > *,
+.sme-meetings-section .sme-meeting-card-info {
+    min-width: 0;
+}
+
+.sme-meetings-section .sme-meetings-heading {
+    flex-wrap: wrap;
+}
+
+/* scrolling list */
+.sme-meetings-section .sme-meetings-list {
+    max-height: 520px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.55) transparent;
+}
+
+.sme-meetings-section .sme-meetings-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sme-meetings-section .sme-meetings-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sme-meetings-section .sme-meetings-list::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.45);
+    border-radius: 999px;
+}
+
+.sme-meetings-section .sme-meetings-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.7);
+}
+
+/* cards never shrink inside the scrolling list */
+.sme-meetings-section .sme-meeting-card {
+    flex: 0 0 auto;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.sme-meetings-section .sme-meeting-card-top,
+.sme-meetings-section .sme-meeting-card-foot {
+    flex-wrap: wrap;
+}
+
+.sme-meetings-section .sme-meeting-card a,
+.sme-meetings-section .sme-meeting-card p,
+.sme-meetings-section .sme-meeting-card h3 {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* the Add Meeting form scrolls too, so a long form cannot push the page */
+.sme-meetings-section .sme-meeting-form {
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.55) transparent;
+}
+
+.sme-meetings-section .sme-meeting-form input,
+.sme-meetings-section .sme-meeting-form select,
+.sme-meetings-section .sme-meeting-form textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1000px) {
+    .sme-meetings-section .sme-meetings-list {
+        max-height: 440px;
+    }
+}
