@@ -69,10 +69,20 @@ $bhSql = "
         COALESCE(SUM(cr.status = 'revision'), 0) AS revision_count,
         COALESCE(SUM(cr.status = 'rejected'), 0) AS rejected_count,
 
+        -- OVERDUE: still pending / redo and the creative date has passed
         COALESCE(
             SUM(
                 cr.creative_date < CURDATE()
                 AND cr.status IN ('pending', 'revision')
+            ),
+            0
+        ) AS overdue_count,
+
+        -- DELAYS: submitted (non-draft) after its creative date
+        COALESCE(
+            SUM(
+                cr.status <> 'draft'
+                AND DATE(cr.created_at) > cr.creative_date
             ),
             0
         ) AS delay_count
@@ -122,27 +132,50 @@ if ($bhStmt) {
                 ? (int) round($approved / $total * 100)
                 : 0;
 
-            // Health: judged on delays and on the approval rate of reviewed
-            // creatives (approved / (approved + redo + rejected)).
-            $reviewed = $approved + $redo + $rejected;
-            $reviewedRate = $reviewed > 0 ? $approved / $reviewed * 100 : null;
-            $delayed = $bhRow['delay_count'];
+            $bhRow['overdue_count'] = (int) $bhRow['overdue_count'];
+
+            // Health rules (a metric "reaches" a level when it is >= its limit):
+            //            delays  revision  rejection  overdue
+            //   Healthy:    0        0         0         0
+            //   At Risk:    2        4         2         2
+            //   Critical:   3        5         3         3
+            $delays   = $bhRow['delay_count'];
+            $overdue  = $bhRow['overdue_count'];
+            $healthLimits = [
+                'critical' => ['delay' => 3, 'revision' => 5, 'rejected' => 3, 'overdue' => 3],
+                'risk'     => ['delay' => 2, 'revision' => 4, 'rejected' => 2, 'overdue' => 2],
+            ];
+            $healthValues = [
+                'delay' => $delays, 'revision' => $redo,
+                'rejected' => $rejected, 'overdue' => $overdue,
+            ];
+            $reaches = static function (array $limits) use ($healthValues): bool {
+                foreach ($limits as $key => $limit) {
+                    if ($healthValues[$key] >= $limit) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
             if ($total === 0) {
                 $bhRow['health'] = 'nodata';
                 $bhRow['health_label'] = 'No data';
                 $bhRow['health_note'] = 'No creatives yet';
-            } elseif ($delayed >= 3 || ($reviewedRate !== null && $reviewedRate < 40)) {
+            } elseif ($reaches($healthLimits['critical'])) {
                 $bhRow['health'] = 'critical';
                 $bhRow['health_label'] = 'Critical';
-                $bhRow['health_note'] = '3+ delayed creatives or under 40% approved';
-            } elseif ($delayed > 0 || ($reviewedRate !== null && $reviewedRate < 70)) {
+                $bhRow['health_note'] = 'Critical: 3+ delays, 5+ revisions, 3+ rejections or 3+ overdue';
+            } elseif ($reaches($healthLimits['risk'])) {
                 $bhRow['health'] = 'risk';
                 $bhRow['health_label'] = 'At Risk';
-                $bhRow['health_note'] = 'Some delays or under 70% approved';
+                $bhRow['health_note'] = 'At risk: 2+ delays, 4+ revisions, 2+ rejections or 2+ overdue';
             } else {
                 $bhRow['health'] = 'healthy';
                 $bhRow['health_label'] = 'Healthy';
-                $bhRow['health_note'] = 'On time and 70%+ approved';
+                $bhRow['health_note'] = $delays + $redo + $rejected + $overdue === 0
+                    ? 'No delays, revisions, rejections or overdue'
+                    : 'Below the at-risk limits';
             }
 
             $bhRows[] = $bhRow;
@@ -223,7 +256,7 @@ $bhVersion = static function (string $relative): string {
 
             <div class="bh-summary-item">
                 <span class="bh-summary-dot bh-dot-red"></span>
-                <span class="bh-summary-label">Delayed</span>
+                <span class="bh-summary-label">Delays</span>
                 <strong id="bhSumDelayed"><?php echo $bhTotalDelayed; ?></strong>
             </div>
         </div>
@@ -255,7 +288,8 @@ $bhVersion = static function (string $relative): string {
                             <th>PENDING</th>
                             <th>REDO</th>
                             <th>REJECTED</th>
-                            <th>DELAYED</th>
+                            <th>DELAYS</th>
+                            <th>OVERDUE</th>
                             <th>APPROVAL</th>
                             <th>HEALTH</th>
                         </tr>
@@ -265,7 +299,7 @@ $bhVersion = static function (string $relative): string {
                     <?php if (empty($bhRows)): ?>
 
                         <tr>
-                            <td colspan="9" class="bh-empty">
+                            <td colspan="10" class="bh-empty">
                                 <span class="bh-empty-icon">◇</span>
                                 <strong>No assigned companies yet</strong>
                                 <p>
@@ -323,6 +357,9 @@ $bhVersion = static function (string $relative): string {
                                 </td>
                                 <td data-col="delayed">
                                     <span class="bh-number <?php echo $bhRow['delay_count'] > 0 ? 'bh-number-red' : ''; ?>"><?php echo $bhRow['delay_count']; ?></span>
+                                </td>
+                                <td data-col="overdue">
+                                    <span class="bh-number <?php echo $bhRow['overdue_count'] > 0 ? 'bh-number-red' : ''; ?>"><?php echo $bhRow['overdue_count']; ?></span>
                                 </td>
                                 <td data-col="approval">
                                     <span class="bh-number"><?php echo $bhRow['approval_rate']; ?>%</span>
