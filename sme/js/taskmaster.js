@@ -1,6 +1,3 @@
-/* ==========================================
-   TASK BOARD - COMPLETE JAVASCRIPT
-========================================== */
 (function () {
     "use strict";
     function initializeTaskBoard() {
@@ -8,6 +5,152 @@
         if (!board || board.dataset.initialized === "true") {
             return;
         }
+        const newTaskList = board.querySelector('#task-list');
+        const wipTaskList = board.querySelector('#wip-task-list');
+        async function sendTaskAction(action, taskId, file = null) {
+            const data = new FormData();
+            data.append('taskboard_action', action);
+            data.append('task_id', taskId);
+            data.append(
+                'taskboard_csrf',
+                board.dataset.csrfToken || ''
+            );
+            if (file) {
+                data.append('start_file', file);
+            }
+            const response = await fetch(board.dataset.apiUrl, {
+                method: 'POST',
+                body: data,
+                credentials: 'same-origin'
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Task action failed.');
+            }
+            return result;
+        }
+        board.addEventListener('click', async function (event) {
+            const button = event.target.closest('[data-task-action]');
+            if (!button || !board.contains(button)) {
+                return;
+            }
+            const action = button.dataset.taskAction;
+            const taskId = button.dataset.taskId;
+            if (action === 'upload') {
+                const item = button.closest('.task-list-item');
+                const fileInput = item?.querySelector('[data-task-file-input]');
+                fileInput?.click();
+                return;
+            }
+            if (!taskId || button.disabled) {
+                return;
+            }
+            button.disabled = true;
+            try {
+                const result = await sendTaskAction(action, taskId);
+                if (action === 'start') {
+                    const taskItem = newTaskList?.querySelector(
+                        `[data-task-id="${taskId}"]`
+                    );
+                    if (taskItem && wipTaskList) {
+                        newTaskList
+                            .querySelector('#task-empty-state')
+                            ?.remove();
+                        wipTaskList
+                            .querySelector('#wip-empty-state')
+                            ?.remove();
+                        taskItem.dataset.taskStatus = 'in_progress';
+                        const startButton = taskItem.querySelector(
+                            '[data-task-action="start"]'
+                        );
+                        if (startButton) {
+                            startButton.disabled = true;
+                            startButton.innerHTML =
+                                '<i class="fa-solid fa-play"></i> Started';
+                        }
+                        const endButton = taskItem.querySelector(
+                            '[data-task-action="end"]'
+                        );
+                        if (endButton) {
+                            endButton.disabled = false;
+                        }
+                        wipTaskList.prepend(taskItem);
+                    }
+                }
+                if (action === 'end') {
+                    const taskItem = board.querySelector(
+                        `.task-list-item[data-task-id="${taskId}"]`
+                    );
+                    taskItem?.remove();
+                    if (
+                        wipTaskList &&
+                        !wipTaskList.querySelector('.task-list-item')
+                    ) {
+                        wipTaskList.innerHTML = `
+                    <div class="task-empty-state" id="wip-empty-state">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <p>No tasks in progress.</p>
+                        <span>All tasks are completed or not started yet.</span>
+                    </div>
+                `;
+                    }
+                }
+                if (typeof showToast === 'function') {
+                    showToast(result.message, 'success');
+                }
+            } catch (error) {
+                if (typeof showToast === 'function') {
+                    showToast(error.message, 'error');
+                } else {
+                    alert(error.message);
+                }
+            } finally {
+                button.disabled = false;
+            }
+        });
+        board.addEventListener('change', async function (event) {
+            const fileInput = event.target.closest('[data-task-file-input]');
+            if (!fileInput || !fileInput.files?.length) {
+                return;
+            }
+            const file = fileInput.files[0];
+            const taskId = fileInput.dataset.taskId;
+            try {
+                const result = await sendTaskAction(
+                    'upload_start_file',
+                    taskId,
+                    file
+                );
+                const taskItem = fileInput.closest('.task-list-item');
+                let fileLink = taskItem?.querySelector('.task-file-link');
+                if (taskItem && !fileLink) {
+                    fileLink = document.createElement('div');
+                    fileLink.className = 'task-file-link';
+                    const actions = taskItem.querySelector('.task-actions');
+                    if (actions) {
+                        taskItem.insertBefore(fileLink, actions);
+                    }
+                }
+                if (fileLink) {
+                    fileLink.replaceChildren();
+                    const icon = document.createElement('i');
+                    icon.className = 'fa-solid fa-paperclip';
+                    const link = document.createElement('a');
+                    link.href = result.start_file;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.textContent = 'View uploaded file';
+                    fileLink.append(icon, link);
+                }
+                if (typeof showToast === 'function') {
+                    showToast(result.message, 'success');
+                }
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                fileInput.value = '';
+            }
+        });
         board.dataset.initialized = "true";
         const overlay = board.querySelector("#task-modal-overlay");
         const form = board.querySelector("#task-create-form");
@@ -106,79 +249,57 @@
         companySelect.addEventListener("change", updateCompanyPreview);
         function addTaskToList(task) {
             const taskList = board.querySelector("#task-list");
-
             if (!taskList) {
                 return;
             }
-
             const emptyState = taskList.querySelector("#task-empty-state");
-
             if (emptyState) {
                 emptyState.remove();
             }
-
             const article = document.createElement("article");
             article.className = "task-list-item";
             article.dataset.taskId = String(task.id);
-
             const top = document.createElement("div");
             top.className = "task-list-item-top";
-
             const details = document.createElement("div");
             details.className = "task-list-item-details";
-
             const title = document.createElement("h3");
             title.textContent = task.task_title;
-
             const company = document.createElement("span");
             company.className = "task-company-name";
-
             const selectedOption = companySelect.options[
                 companySelect.selectedIndex
             ];
-
             company.textContent = selectedOption
                 ? selectedOption.textContent.trim()
                 : "";
-
             details.append(title, company);
             top.appendChild(details);
-
             if (Number(task.is_priority) === 1) {
                 const priority = document.createElement("span");
                 priority.className = "task-priority-badge";
                 priority.textContent = "Priority";
                 top.appendChild(priority);
             }
-
             const meta = document.createElement("div");
             meta.className = "task-list-meta";
-
             const type = document.createElement("span");
             type.textContent = task.task_type;
-
             const objective = document.createElement("span");
             objective.textContent = task.objective;
-
             meta.append(type, objective);
-
             const footer = document.createElement("div");
             footer.className = "task-list-footer";
-
             const creator = document.createElement("span");
             creator.textContent = "Created by " + task.created_by_name;
-
             const date = document.createElement("span");
             date.textContent = new Date().toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "short",
                 year: "numeric"
             });
-
             footer.append(creator, date);
-
             article.append(top, meta, footer);
-
             taskList.prepend(article);
         }
         form.addEventListener("submit", async function (event) {
@@ -220,11 +341,9 @@
                 closeModal();
                 form.reset();
                 updateCompanyPreview();
-
                 if (result.task) {
                     addTaskToList(result.task);
                 }
-
                 showToast(result.message || "Task created successfully!");
             } catch (error) {
                 console.error("Task Board error:", error);

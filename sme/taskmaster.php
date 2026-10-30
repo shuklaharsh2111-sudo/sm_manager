@@ -3,9 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/../config/db.php';
-/* ==========================================
-   TASK BOARD - HELPER FUNCTIONS
-========================================== */
 $tbEscape = static function ($value): string {
     return htmlspecialchars(
         (string) $value,
@@ -25,9 +22,7 @@ $tbRespond = static function (
     );
     exit;
 };
-/* ==========================================
-   TASK BOARD - SESSION / USER VALIDATION
-========================================== */
+// 1. Check user authentication FIRST
 $taskBoardUserId = (int) ($_SESSION['user_id'] ?? 0);
 if ($taskBoardUserId <= 0) {
     $isTaskBoardAjax = isset($_GET['taskboard_action']);
@@ -41,16 +36,10 @@ if ($taskBoardUserId <= 0) {
     http_response_code(401);
     exit('Please log in to access the Task Board.');
 }
-/* ==========================================
-   TASK BOARD - CSRF TOKEN
-========================================== */
 if (empty($_SESSION['taskboard_csrf'])) {
     $_SESSION['taskboard_csrf'] = bin2hex(random_bytes(32));
 }
 $taskBoardCsrf = $_SESSION['taskboard_csrf'];
-/* ==========================================
-   TASK BOARD - CURRENT USER NAME
-========================================== */
 $taskBoardUserName = trim(
     (string) (
         $_SESSION['fullname']
@@ -79,9 +68,6 @@ if ($taskBoardUserName === '') {
 if ($taskBoardUserName === '') {
     $taskBoardUserName = 'User #' . $taskBoardUserId;
 }
-/* ==========================================
-   TASK BOARD - AJAX CREATE TASK HANDLER
-========================================== */
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
     && ($_POST['taskboard_action'] ?? '') === 'create'
@@ -173,10 +159,6 @@ if (
             'message' => 'Please select a valid objective.'
         ]);
     }
-    /* ==========================================
-       VERIFY COMPANY ASSIGNMENT
-       IMPORTANT: Check before inserting a task.
-    ========================================== */
     $assignmentStmt = $conn->prepare(
         "SELECT 1
          FROM sme_company_assignments
@@ -216,9 +198,6 @@ if (
             'message' => 'You are not assigned to this company.'
         ]);
     }
-    /* ==========================================
-       VERIFY COMPANY DETAILS
-    ========================================== */
     $companyStmt = $conn->prepare(
         "SELECT id
          FROM companies
@@ -253,9 +232,6 @@ if (
             'message' => 'Selected company was not found.'
         ]);
     }
-    /* ==========================================
-       VERIFY LOGGED-IN DATABASE USER
-    ========================================== */
     $userStmt = $conn->prepare(
         "SELECT fullname
          FROM users
@@ -294,9 +270,6 @@ if (
     if ($creatorName === '') {
         $creatorName = 'User #' . $taskBoardUserId;
     }
-    /* ==========================================
-       INSERT TASK
-    ========================================== */
     $insertStmt = $conn->prepare(
         "INSERT INTO task_board_tasks
         (
@@ -355,10 +328,6 @@ if (
         ]
     ]);
 }
-/* ==========================================
-   TASK BOARD - PAGE DATA
-   LOAD ONLY ASSIGNED COMPANIES
-========================================== */
 $taskBoardCompanies = [];
 $taskBoardError = '';
 $companiesStmt = $conn->prepare(
@@ -398,22 +367,10 @@ if (!$companiesStmt) {
     }
     $companiesStmt->close();
 }
-/* ==========================================
-   TASK BOARD - ESCAPE HELPER
-========================================== */
-$tbEscape = static function ($value): string {
-    return htmlspecialchars(
-        (string) $value,
-        ENT_QUOTES,
-        'UTF-8'
-    );
-};
-/* ==========================================
-   TASK BOARD - LOAD CREATED TASKS
-========================================== */
 $taskBoardTasks = [];
-$tasksStmt = $conn->prepare(
-    "SELECT
+$taskBoardWipTasks = [];
+$taskQuery = "
+    SELECT
         t.id,
         t.company_id,
         t.task_title,
@@ -423,25 +380,40 @@ $tasksStmt = $conn->prepare(
         t.created_by,
         t.created_by_name,
         t.created_at,
+        t.task_status,
+        t.start_file,
+        t.started_at,
+        t.completed_at,
         c.comp_name,
         c.comp_logo
-    FROM task_board_tasks AS t
-    INNER JOIN companies AS c
+    FROM task_board_tasks t
+    INNER JOIN companies c
         ON c.id = t.company_id
-    INNER JOIN sme_company_assignments AS sca
+    INNER JOIN sme_company_assignments sca
         ON sca.company_id = t.company_id
-       AND sca.sme_user_id = ?
+        AND sca.sme_user_id = ?
+    WHERE t.task_status IN ('new', 'in_progress')
     ORDER BY
         t.is_priority DESC,
         t.created_at DESC,
-        t.id DESC"
-);
-if ($tasksStmt) {
+        t.id DESC
+";
+$tasksStmt = $conn->prepare($taskQuery);
+if (!$tasksStmt) {
+    error_log(
+        'Task Board fetch prepare failed: ' . $conn->error
+    );
+    $taskBoardError = 'Unable to load tasks.';
+} else {
     $tasksStmt->bind_param('i', $taskBoardUserId);
     if ($tasksStmt->execute()) {
         $tasksResult = $tasksStmt->get_result();
         while ($task = $tasksResult->fetch_assoc()) {
-            $taskBoardTasks[] = $task;
+            if ($task['task_status'] === 'new') {
+                $taskBoardTasks[] = $task;
+            } elseif ($task['task_status'] === 'in_progress') {
+                $taskBoardWipTasks[] = $task;
+            }
         }
         $tasksResult->free();
     } else {
@@ -450,12 +422,8 @@ if ($tasksStmt) {
         );
         $taskBoardError = 'Unable to load tasks.';
     }
+    // Statement is closed only once.
     $tasksStmt->close();
-} else {
-    error_log(
-        'Task Board fetch prepare failed: ' . $conn->error
-    );
-    $taskBoardError = 'Unable to load tasks.';
 }
 ?>
 <link rel="stylesheet" type="text/css" href="css/taskmaster.css">
@@ -496,9 +464,7 @@ if ($tasksStmt) {
                         </div>
                     <?php else: ?>
                         <?php foreach ($taskBoardTasks as $task): ?>
-                            <article
-                                class="task-list-item"
-                                data-task-id="<?= (int) $task['id'] ?>">
+                            <article class="task-list-item" data-task-id="<?= (int) $task['id'] ?>">
                                 <div class="task-list-item-top">
                                     <div class="task-list-item-details">
                                         <h3>
@@ -536,6 +502,40 @@ if ($tasksStmt) {
                                         ) ?>
                                     </span>
                                 </div>
+                                <div class="task-actions">
+                                    <button
+                                        type="button"
+                                        class="task-action-btn task-start-btn"
+                                        data-task-action="start"
+                                        data-task-id="<?= (int) $task['id'] ?>">
+                                        <i class="fa-solid fa-play"></i>
+                                        Start
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="task-action-btn task-upload-btn"
+                                        data-task-action="upload"
+                                        data-task-id="<?= (int) $task['id'] ?>"
+                                        title="Upload start file"
+                                        aria-label="Upload start file">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                    <input
+                                        type="file"
+                                        hidden
+                                        data-task-file-input
+                                        data-task-id="<?= (int) $task['id'] ?>"
+                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
+                                    <button
+                                        type="button"
+                                        class="task-action-btn task-end-btn"
+                                        data-task-action="end"
+                                        data-task-id="<?= (int) $task['id'] ?>"
+                                        disabled>
+                                        <i class="fa-solid fa-flag-checkered"></i>
+                                        End
+                                    </button>
+                                </div>
                             </article>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -566,6 +566,85 @@ if ($tasksStmt) {
             <div class="task-card-content">
                 <h2>Work in Progress <span>(WIP)</span></h2>
                 <p>Keep track of tasks currently being worked on.</p>
+                <div class="task-list" id="wip-task-list">
+                    <?php if (empty($taskBoardWipTasks)): ?>
+                        <div class="task-empty-state" id="wip-empty-state">
+                            <i class="fa-solid fa-spinner"></i>
+                            <p>No tasks in progress.</p>
+                            <span>Start a task to see it here.</span>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($taskBoardWipTasks as $task): ?>
+                            <article
+                                class="task-list-item"
+                                data-task-id="<?= (int) $task['id'] ?>"
+                                data-task-status="in_progress">
+                                <div class="task-list-item-top">
+                                    <div class="task-list-item-details">
+                                        <h3>
+                                            <?= $tbEscape($task['task_title']) ?>
+                                        </h3>
+                                        <span class="task-company-name">
+                                            <?= $tbEscape($task['comp_name']) ?>
+                                        </span>
+                                    </div>
+                                    <?php if ((int) $task['is_priority'] === 1): ?>
+                                        <span class="task-priority-badge">
+                                            Priority
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="task-list-meta">
+                                    <span><?= $tbEscape($task['task_type']) ?></span>
+                                    <span><?= $tbEscape($task['objective']) ?></span>
+                                </div>
+                                <?php if (!empty($task['start_file'])): ?>
+                                    <div class="task-file-link">
+                                        <i class="fa-solid fa-paperclip"></i>
+                                        <a
+                                            href="<?= $tbEscape($task['start_file']) ?>"
+                                            target="_blank"
+                                            rel="noopener noreferrer">
+                                            View uploaded file
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="task-actions">
+                                    <button
+                                        type="button"
+                                        class="task-action-btn task-start-btn"
+                                        disabled>
+                                        <i class="fa-solid fa-play"></i>
+                                        Started
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="task-action-btn task-upload-btn"
+                                        data-task-action="upload"
+                                        data-task-id="<?= (int) $task['id'] ?>"
+                                        title="Upload start file"
+                                        aria-label="Upload start file">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                    <input
+                                        type="file"
+                                        hidden
+                                        data-task-file-input
+                                        data-task-id="<?= (int) $task['id'] ?>"
+                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
+                                    <button
+                                        type="button"
+                                        class="task-action-btn task-end-btn"
+                                        data-task-action="end"
+                                        data-task-id="<?= (int) $task['id'] ?>">
+                                        <i class="fa-solid fa-flag-checkered"></i>
+                                        End
+                                    </button>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="task-card-footer">
                 <span class="task-card-status">
