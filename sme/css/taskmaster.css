@@ -1,12 +1,9 @@
-/* ==========================================
-   TASK BOARD - ULTRA COMPACT DARK THEME CSS
-   ========================================== */
+/* Dark Theme Compact Rules */
 :root {
   --tb-bg-dark: #0a0c14;
   --tb-card-bg: #121624;
   --tb-border-color: #242a42;
   --tb-border-subtle: #1c2237;
-  /* Dark Blue, Violet & Purple Palette */
   --tb-primary: #8b5cf6;
   --tb-primary-hover: #7c3aed;
   --tb-accent-blue: #3b82f6;
@@ -19,16 +16,13 @@
   --tb-radius: 6px;
   --tb-transition: all 0.2s ease;
 }
-/* Main Container */
 .task-board-module {
   background-color: var(--tb-bg-dark);
   color: var(--tb-text-main);
-  font-family: inherit;
   padding: 12px;
-  max-width: 100%;
   box-sizing: border-box;
 }
-/* Header - Compact Line Layout */
+/* Header */
 .task-board-header {
   display: flex;
   justify-content: space-between;
@@ -40,7 +34,6 @@
 .task-board-heading .task-board-eyebrow {
   font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: var(--tb-accent-purple);
   font-weight: 700;
   display: block;
@@ -54,7 +47,7 @@
 .task-board-heading p {
   font-size: 0.8rem;
   color: var(--tb-text-muted);
-  margin: 2px 0 0 0;
+  margin: 2px 0 0;
 }
 .task-board-header-icon {
   font-size: 1.25rem;
@@ -64,10 +57,10 @@
   border-radius: var(--tb-radius);
   border: 1px solid var(--tb-border-color);
 }
-/* Grid layout replacing bulky boxes with streamline structures */
+/* Equal size 3 div grid columns */
 .task-board-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 @media (max-width: 1024px) {
@@ -75,7 +68,7 @@
     grid-template-columns: 1fr;
   }
 }
-/* Category Card - Slim Line Framework */
+/* Category Cards */
 .task-category-card {
   background-color: var(--tb-card-bg);
   border: 1px solid var(--tb-border-color);
@@ -83,7 +76,6 @@
   display: flex;
   flex-direction: column;
   padding: 10px;
-  position: relative;
 }
 .task-card-top {
   display: flex;
@@ -105,7 +97,7 @@
 .task-card-content h2 {
   font-size: 0.95rem;
   font-weight: 600;
-  margin: 0 0 2px 0;
+  margin: 0 0 2px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -117,9 +109,9 @@
 .task-card-content p {
   font-size: 0.75rem;
   color: var(--tb-text-muted);
-  margin: 0 0 8px 0;
+  margin: 0 0 8px;
 }
-/* Task List Items as Simple Clean Lines */
+/* List Item & Inline Buttons */
 .task-list {
   display: flex;
   flex-direction: column;
@@ -130,7 +122,7 @@
 .task-list-item {
   background: rgba(18, 22, 36, 0.6);
   border-bottom: 1px solid var(--tb-border-subtle);
-  padding: 6px 4px;
+  padding: 8px 6px;
   transition: var(--tb-transition);
 }
 .task-list-item:hover {
@@ -138,9 +130,13 @@
 }
 .task-list-item-top {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
   gap: 8px;
+}
+.task-list-item-details {
+  flex: 1;
+  min-width: 0;
 }
 .task-list-item-details h3 {
   font-size: 0.8rem;
@@ -151,6 +147,7 @@
 .task-company-name {
   font-size: 0.7rem;
   color: var(--tb-accent-blue);
+  display: block;
 }
 .task-priority-badge {
   background-color: var(--tb-priority-bg);
@@ -161,12 +158,57 @@
   font-weight: 600;
   text-transform: uppercase;
 }
+/* Inline Action Buttons Styling */
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0;
+  margin-left: auto;
+}
+.task-action-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: var(--tb-transition);
+}
+.task-start-btn {
+  background: #198754;
+  color: #fff;
+}
+.task-start-btn:hover:not(:disabled) {
+  background: #157347;
+}
+.task-upload-btn {
+  background: #3b82f6;
+  color: #fff;
+}
+.task-upload-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+.task-end-btn {
+  background: #dc3545;
+  color: #fff;
+}
+.task-end-btn:hover:not(:disabled) {
+  background: #bb2d3b;
+}
+.task-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .task-list-meta {
   display: flex;
   gap: 8px;
   font-size: 0.65rem;
   color: var(--tb-text-muted);
-  margin: 3px 0;
+  margin: 4px 0 2px;
 }
 .task-list-footer {
   display: flex;
@@ -175,9 +217,23 @@
   color: var(--tb-text-dim);
   border-top: 1px dashed var(--tb-border-subtle);
   padding-top: 3px;
-  margin-top: 3px;
+  margin-top: 4px;
 }
-/* Empty State */
+.task-file-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.7rem;
+}
+.task-file-link a {
+  color: var(--tb-accent-purple);
+  text-decoration: none;
+}
+.task-file-link a:hover {
+  text-decoration: underline;
+}
+/* Empty State & Footers */
 .task-empty-state {
   text-align: center;
   padding: 15px 5px;
@@ -195,7 +251,6 @@
 .task-empty-state span {
   font-size: 0.65rem;
 }
-/* Card Footer - Minimal Line */
 .task-card-footer {
   display: flex;
   justify-content: space-between;
@@ -238,7 +293,7 @@
   color: var(--tb-text-dim);
   cursor: not-allowed;
 }
-/* Modal Overlay & Styling - Initially Hidden */
+/* Modal & Form Layout */
 .task-modal-overlay {
   position: fixed;
   top: 0;
@@ -253,7 +308,6 @@
   z-index: 1000;
   padding: 10px;
 }
-/* Ensure hidden attribute completely hides the modal by default */
 .task-modal-overlay[hidden] {
   display: none !important;
 }
@@ -281,7 +335,7 @@
 .task-modal-header p {
   font-size: 0.75rem;
   color: var(--tb-text-muted);
-  margin: 2px 0 0 0;
+  margin: 2px 0 0;
 }
 .task-modal-close {
   background: none;
@@ -290,7 +344,6 @@
   font-size: 1rem;
   cursor: pointer;
 }
-/* Compact Form Layout */
 .task-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -366,7 +419,6 @@
   background: var(--tb-priority-bg);
   color: var(--tb-priority-text);
 }
-/* Modal Actions */
 .task-modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -398,7 +450,6 @@
 .task-submit-button:hover {
   background: var(--tb-primary-hover);
 }
-/* Toast Notification */
 .task-board-toast {
   position: fixed;
   bottom: 12px;
@@ -414,124 +465,4 @@
 }
 .task-board-toast[hidden] {
   display: none !important;
-}
-.task-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
-.task-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 36px;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease, opacity 0.2s ease;
-}
-.task-start-btn {
-  color: #fff;
-  background: #237a57;
-}
-.task-start-btn:hover:not(:disabled) {
-  background: #2d956b;
-}
-.task-upload-btn {
-  width: 36px;
-  padding: 8px;
-  color: #fff;
-  background: #5145a5;
-  font-size: 15px;
-}
-.task-upload-btn:hover:not(:disabled) {
-  background: #6859c9;
-}
-.task-end-btn {
-  color: #fff;
-  background: #a83d4a;
-}
-.task-end-btn:hover:not(:disabled) {
-  background: #c64b59;
-}
-.task-action-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.task-file-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.task-file-link a {
-  color: #a99aff;
-  text-decoration: none;
-}
-.task-file-link a:hover {
-  text-decoration: underline;
-}
-/* ==========================================
-   TASK ACTION BUTTONS
-========================================== */
-.task-list-item-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.task-list-item-details {
-  flex: 1;
-  min-width: 0;
-}
-.task-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 9px;
-  margin-top: 12px;
-}
-.task-action-btn {
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 9px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.task-start-btn {
-  background: #e8f5ed;
-  color: #198754;
-}
-.task-upload-btn {
-  background: #eaf0ff;
-  color: #4169e1;
-}
-.task-end-btn {
-  background: #fff0ed;
-  color: #dc5545;
-}
-.task-action-btn:hover {
-  transform: translateY(-2px);
-  filter: brightness(0.96);
-}
-.task-action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-.task-file-link {
-  margin-top: 10px;
 }
