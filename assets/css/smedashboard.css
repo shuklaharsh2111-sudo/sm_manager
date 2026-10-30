@@ -1076,3 +1076,129 @@
 .sme-sop-saved-note[hidden] {
     display: none;
 }
+
+
+/* ==========================================================================
+   SOP panel + Upcoming Meetings: one matching pair
+   - same height (grid stretches both cards to the taller one)
+   - same card look (gradient, border, top bar, padding)
+   - same header: title + action button on one line, description under it,
+     so both divider lines sit at the same height
+   ========================================================================== */
+.sme-sops-meetings-layout {
+    align-items: stretch;
+}
+
+.sme-sops-meetings-layout > .sme-sops-section,
+.sme-sops-meetings-layout > .sme-meetings-section {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    padding: 28px;
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.9), rgba(11, 15, 25, 0.98));
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(99, 102, 241, 0.12);
+    box-sizing: border-box;
+    position: relative;
+}
+
+.sme-sops-meetings-layout > .sme-meetings-section::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--gradient-primary);
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+.sme-sops-meetings-layout .sme-sops-heading,
+.sme-sops-meetings-layout .sme-meetings-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 42px auto;
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 6px;
+    margin: 0 0 22px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* let the title and the description take part in the grid directly */
+.sme-sops-meetings-layout .sme-sops-heading > div,
+.sme-sops-meetings-layout .sme-meetings-heading > div {
+    display: contents;
+}
+
+.sme-sops-meetings-layout .sme-sops-heading h2,
+.sme-sops-meetings-layout .sme-meetings-heading h2 {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+    background: linear-gradient(to right, #ffffff, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sme-sops-meetings-layout .sme-sops-heading p,
+.sme-sops-meetings-layout .sme-meetings-heading p {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+    min-height: 3em; /* always two lines tall, so both dividers line up */
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.sme-sops-meetings-layout .sme-sop-saved-link,
+.sme-sops-meetings-layout .sme-add-meeting-btn {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    box-sizing: border-box;
+    height: 42px;
+    min-height: 42px;
+    margin: 0;
+    padding: 0 18px;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .sme-sops-meetings-layout > .sme-sops-section,
+    .sme-sops-meetings-layout > .sme-meetings-section {
+        padding: 16px;
+    }
+
+    .sme-sops-meetings-layout .sme-sops-heading,
+    .sme-sops-meetings-layout .sme-meetings-heading {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+    }
+
+    .sme-sops-meetings-layout .sme-sops-heading p,
+    .sme-sops-meetings-layout .sme-meetings-heading p {
+        grid-row: 2;
+        min-height: 0;
+    }
+
+    .sme-sops-meetings-layout .sme-sop-saved-link,
+    .sme-sops-meetings-layout .sme-add-meeting-btn {
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: stretch;
+        margin-top: 8px;
+        width: 100%;
+        justify-content: center;
+    }
+}
