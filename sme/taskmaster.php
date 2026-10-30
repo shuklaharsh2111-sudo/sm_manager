@@ -1,5 +1,7 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once __DIR__ . '/../config/db.php';
 $tbEscape = static fn($val): string => htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
 $tbRespond = static function (int $status, array $data): void {
@@ -11,11 +13,15 @@ $tbRespond = static function (int $status, array $data): void {
 // Auth Check
 $taskBoardUserId = (int)($_SESSION['user_id'] ?? 0);
 if ($taskBoardUserId <= 0) {
-    if (isset($_GET['taskboard_action'])) { $tbRespond(401, ['success' => false, 'message' => 'Session expired.']); }
+    if (isset($_GET['taskboard_action'])) {
+        $tbRespond(401, ['success' => false, 'message' => 'Session expired.']);
+    }
     http_response_code(401);
     exit('Please log in to access the Task Board.');
 }
-if (empty($_SESSION['taskboard_csrf'])) { $_SESSION['taskboard_csrf'] = bin2hex(random_bytes(32)); }
+if (empty($_SESSION['taskboard_csrf'])) {
+    $_SESSION['taskboard_csrf'] = bin2hex(random_bytes(32));
+}
 $taskBoardCsrf = $_SESSION['taskboard_csrf'];
 $taskBoardUserName = trim((string)($_SESSION['fullname'] ?? $_SESSION['user']['fullname'] ?? $_SESSION['name'] ?? ''));
 if ($taskBoardUserName === '') {
@@ -24,11 +30,15 @@ if ($taskBoardUserName === '') {
         $nameStmt->bind_param('i', $taskBoardUserId);
         $nameStmt->execute();
         $nameStmt->bind_result($dbName);
-        if ($nameStmt->fetch()) { $taskBoardUserName = trim((string)$dbName); }
+        if ($nameStmt->fetch()) {
+            $taskBoardUserName = trim((string)$dbName);
+        }
         $nameStmt->close();
     }
 }
-if ($taskBoardUserName === '') { $taskBoardUserName = 'User #' . $taskBoardUserId; }
+if ($taskBoardUserName === '') {
+    $taskBoardUserName = 'User #' . $taskBoardUserId;
+}
 // Actions: Start / Upload / End
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['taskboard_action'] ?? '', ['start', 'upload_start_file', 'end'], true)) {
     $action = $_POST['taskboard_action'];
@@ -38,50 +48,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['taskboard_action']
         $tbRespond(403, ['success' => false, 'message' => 'Security token expired.']);
     }
     $taskId = filter_var($_POST['task_id'] ?? null, FILTER_VALIDATE_INT);
-    if (!$taskId || $taskId < 1) { $tbRespond(422, ['success' => false, 'message' => 'Invalid task.']); }
+    if (!$taskId || $taskId < 1) {
+        $tbRespond(422, ['success' => false, 'message' => 'Invalid task.']);
+    }
     $checkStmt = $conn->prepare("SELECT t.id, t.task_status FROM task_board_tasks t INNER JOIN sme_company_assignments sca ON sca.company_id = t.company_id AND sca.sme_user_id = ? WHERE t.id = ? LIMIT 1");
-    if (!$checkStmt) { $tbRespond(500, ['success' => false, 'message' => 'Unable to verify task.']); }
+    if (!$checkStmt) {
+        $tbRespond(500, ['success' => false, 'message' => 'Unable to verify task.']);
+    }
     $checkStmt->bind_param('ii', $taskBoardUserId, $taskId);
     $checkStmt->execute();
     $checkStmt->bind_result($verifiedTaskId, $currentStatus);
     $taskExists = $checkStmt->fetch();
     $checkStmt->close();
-    if (!$taskExists) { $tbRespond(404, ['success' => false, 'message' => 'Task not found.']); }
+    if (!$taskExists) {
+        $tbRespond(404, ['success' => false, 'message' => 'Task not found.']);
+    }
     if ($action === 'start') {
-        if ($currentStatus !== 'new') { $tbRespond(422, ['success' => false, 'message' => 'Task already started.']); }
-        $stmt = $conn->prepare("UPDATE task_board_tasks SET task_status = 'in_progress', started_at = NOW() WHERE id = ? AND task_status = 'new'");
+        if ($currentStatus !== 'new') {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'Task already started.'
+            ]);
+        }
+        $stmt = $conn->prepare("
+        UPDATE task_board_tasks
+        SET
+            task_status = 'in_progress',
+            started_at = NOW()
+        WHERE id = ?
+        AND task_status = 'new'
+    ");
         $stmt->bind_param('i', $taskId);
-        if (!$stmt->execute() || $stmt->affected_rows !== 1) { $stmt->close(); $tbRespond(500, ['success' => false, 'message' => 'Unable to start task.']); }
+        if (!$stmt->execute() || $stmt->affected_rows !== 1) {
+            $stmt->close();
+            $tbRespond(500, [
+                'success' => false,
+                'message' => 'Unable to start task.'
+            ]);
+        }
         $stmt->close();
-        $tbRespond(200, ['success' => true, 'message' => 'Task started successfully!', 'started_at' => date('d M Y, H:i')]);
+        $tbRespond(200, [
+            'success' => true,
+            'message' => 'Task started successfully!'
+        ]);
     }
     if ($action === 'upload_start_file') {
-        if ($currentStatus !== 'in_progress') { $tbRespond(422, ['success' => false, 'message' => 'Start task before uploading.']); }
-        if (!isset($_FILES['start_file']) || $_FILES['start_file']['error'] !== UPLOAD_ERR_OK) { $tbRespond(422, ['success' => false, 'message' => 'Select a valid file.']); }
+        if ($currentStatus !== 'in_progress') {
+            $tbRespond(422, ['success' => false, 'message' => 'Start task before uploading.']);
+        }
+        if (!isset($_FILES['start_file']) || $_FILES['start_file']['error'] !== UPLOAD_ERR_OK) {
+            $tbRespond(422, ['success' => false, 'message' => 'Select a valid file.']);
+        }
         $file = $_FILES['start_file'];
-        if ($file['size'] > 10 * 1024 * 1024) { $tbRespond(422, ['success' => false, 'message' => 'Max size is 10MB.']); }
-        $allowed = ['pdf','doc','docx','xls','xlsx','ppt','pptx','jpg','jpeg','png','webp'];
+        if ($file['size'] > 10 * 1024 * 1024) {
+            $tbRespond(422, ['success' => false, 'message' => 'Max size is 10MB.']);
+        }
+        $allowed = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'webp'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowed, true)) { $tbRespond(422, ['success' => false, 'message' => 'File type not allowed.']); }
+        if (!in_array($ext, $allowed, true)) {
+            $tbRespond(422, ['success' => false, 'message' => 'File type not allowed.']);
+        }
         $uploadDir = dirname(__DIR__) . '/uploads/task_board/';
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) { $tbRespond(500, ['success' => false, 'message' => 'Directory error.']); }
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+            $tbRespond(500, ['success' => false, 'message' => 'Directory error.']);
+        }
         $fileName = bin2hex(random_bytes(16)) . '.' . $ext;
         $absPath = $uploadDir . $fileName;
         $relPath = '../uploads/task_board/' . $fileName;
-        if (!move_uploaded_file($file['tmp_name'], $absPath)) { $tbRespond(500, ['success' => false, 'message' => 'Upload failed.']); }
+        if (!move_uploaded_file($file['tmp_name'], $absPath)) {
+            $tbRespond(500, ['success' => false, 'message' => 'Upload failed.']);
+        }
         $stmt = $conn->prepare("UPDATE task_board_tasks SET start_file = ? WHERE id = ? AND task_status = 'in_progress'");
         $stmt->bind_param('si', $relPath, $taskId);
-        if (!$stmt->execute()) { $stmt->close(); @unlink($absPath); $tbRespond(500, ['success' => false, 'message' => 'Save failed.']); }
+        if (!$stmt->execute()) {
+            $stmt->close();
+            @unlink($absPath);
+            $tbRespond(500, ['success' => false, 'message' => 'Save failed.']);
+        }
         $stmt->close();
         $tbRespond(200, ['success' => true, 'message' => 'File uploaded!', 'start_file' => $relPath]);
     }
     if ($action === 'end') {
-        if ($currentStatus !== 'in_progress') { $tbRespond(422, ['success' => false, 'message' => 'Only WIP tasks can end.']); }
-        $stmt = $conn->prepare("UPDATE task_board_tasks SET task_status = 'completed', completed_at = NOW() WHERE id = ? AND task_status = 'in_progress'");
+        if ($currentStatus !== 'in_progress') {
+            $tbRespond(422, [
+                'success' => false,
+                'message' => 'Only WIP tasks can end.'
+            ]);
+        }
+        $stmt = $conn->prepare("
+        UPDATE task_board_tasks
+        SET
+            task_status = 'completed',
+            completed_at = NOW()
+        WHERE id = ?
+        AND task_status = 'in_progress'
+    ");
         $stmt->bind_param('i', $taskId);
-        if (!$stmt->execute() || $stmt->affected_rows !== 1) { $stmt->close(); $tbRespond(500, ['success' => false, 'message' => 'Unable to complete task.']); }
+        if (!$stmt->execute() || $stmt->affected_rows !== 1) {
+            $stmt->close();
+            $tbRespond(500, [
+                'success' => false,
+                'message' => 'Unable to complete task.'
+            ]);
+        }
         $stmt->close();
-        $tbRespond(200, ['success' => true, 'message' => 'Task completed successfully!', 'completed_at' => date('d M Y, H:i')]);
+        $tbRespond(200, [
+            'success' => true,
+            'message' => 'Task completed successfully!'
+        ]);
     }
 }
 // Action: Create Task
@@ -104,18 +178,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['taskboard_action'] ?? '') 
     $type = trim((string)($_POST['task_type'] ?? ''));
     $objective = trim((string)($_POST['objective'] ?? ''));
     $isPriority = (isset($_POST['is_priority']) && $_POST['is_priority'] === '1') ? 1 : 0;
-    if ($companyId < 1 || $title === '' || mb_strlen($title, 'UTF-8') > 255) { $tbRespond(422, ['success' => false, 'message' => 'Invalid details.']); }
+    if ($companyId < 1 || $title === '' || mb_strlen($title, 'UTF-8') > 255) {
+        $tbRespond(422, ['success' => false, 'message' => 'Invalid details.']);
+    }
     $assignStmt = $conn->prepare("SELECT 1 FROM sme_company_assignments WHERE sme_user_id = ? AND company_id = ? LIMIT 1");
     $assignStmt->bind_param('ii', $taskBoardUserId, $companyId);
     $assignStmt->execute();
     $assignStmt->store_result();
     $isAssigned = $assignStmt->num_rows > 0;
     $assignStmt->close();
-    if (!$isAssigned) { $tbRespond(403, ['success' => false, 'message' => 'Company not assigned.']); }
+    if (!$isAssigned) {
+        $tbRespond(403, ['success' => false, 'message' => 'Company not assigned.']);
+    }
     $creatorName = $taskBoardUserName;
     $insertStmt = $conn->prepare("INSERT INTO task_board_tasks (company_id, task_title, task_category, recurring_interval, task_type, objective, is_priority, created_by, created_by_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $insertStmt->bind_param('ississiis', $companyId, $title, $taskCategory, $recurringInterval, $type, $objective, $isPriority, $taskBoardUserId, $creatorName);
-    if (!$insertStmt->execute()) { $insertStmt->close(); $tbRespond(500, ['success' => false, 'message' => 'Save failed.']); }
+    if (!$insertStmt->execute()) {
+        $insertStmt->close();
+        $tbRespond(500, ['success' => false, 'message' => 'Save failed.']);
+    }
     $taskId = (int)$conn->insert_id;
     $insertStmt->close();
     $tbRespond(201, ['success' => true, 'message' => 'Task created!', 'task' => ['id' => $taskId, 'company_id' => $companyId, 'task_title' => $title, 'task_category' => $taskCategory, 'recurring_interval' => $recurringInterval, 'task_type' => $type, 'objective' => $objective, 'is_priority' => $isPriority, 'created_by' => $taskBoardUserId, 'created_by_name' => $creatorName, 'created_at' => date('Y-m-d H:i:s')]]);
@@ -128,7 +209,9 @@ if ($companiesStmt) {
     $companiesStmt->bind_param('i', $taskBoardUserId);
     if ($companiesStmt->execute()) {
         $res = $companiesStmt->get_result();
-        while ($row = $res->fetch_assoc()) { $taskBoardCompanies[] = $row; }
+        while ($row = $res->fetch_assoc()) {
+            $taskBoardCompanies[] = $row;
+        }
         $res->free();
     }
     $companiesStmt->close();
@@ -138,7 +221,6 @@ $taskBoardTasks = [];
 $taskBoardWipTasks = [];
 $taskBoardRecurringTasks = [];
 $taskBoardCompletedTasks = [];
-
 $tasksStmt = $conn->prepare("SELECT t.id, t.company_id, t.task_title, t.task_category, t.recurring_interval, t.task_type, t.objective, t.is_priority, t.created_by, t.created_by_name, t.created_at, t.task_status, t.start_file, t.started_at, t.completed_at, c.comp_name, c.comp_logo FROM task_board_tasks t INNER JOIN companies c ON c.id = t.company_id INNER JOIN sme_company_assignments sca ON sca.company_id = t.company_id AND sca.sme_user_id = ? ORDER BY t.is_priority DESC, t.created_at DESC, t.id DESC");
 if ($tasksStmt) {
     $tasksStmt->bind_param('i', $taskBoardUserId);
@@ -151,10 +233,10 @@ if ($tasksStmt) {
                 if ($row['task_category'] === 'recurring') {
                     $taskBoardRecurringTasks[] = $row;
                 }
-                if ($row['task_status'] === 'new') { 
-                    $taskBoardTasks[] = $row; 
-                } elseif ($row['task_status'] === 'in_progress') { 
-                    $taskBoardWipTasks[] = $row; 
+                if ($row['task_status'] === 'new') {
+                    $taskBoardTasks[] = $row;
+                } elseif ($row['task_status'] === 'in_progress') {
+                    $taskBoardWipTasks[] = $row;
                 }
             }
         }
@@ -227,7 +309,6 @@ if ($tasksStmt) {
                 <button type="button" class="task-add-button" data-open-task-modal aria-label="Add new task" title="Add New Task"><i class="fa-solid fa-plus"></i></button>
             </div>
         </article>
-
         <!-- CARD 2: WIP -->
         <article class="task-category-card wip-task-card">
             <div class="task-card-top">
@@ -272,7 +353,7 @@ if ($tasksStmt) {
                                     <span><?= $tbEscape($task['objective']) ?></span>
                                 </div>
                                 <div class="task-list-footer">
-                                    <span>Started: <?= !empty($task['started_at']) ? $tbEscape(date('d M Y, H:i', strtotime($task['started_at']))) : 'Just now' ?></span>
+                                    <span> Started: <?= !empty($task['started_at']) ? $tbEscape(date('d M Y, h:i A', strtotime($task['started_at']))) : 'N/A' ?> </span>
                                 </div>
                                 <?php if (!empty($task['start_file'])): ?>
                                     <div class="task-file-link">
@@ -290,7 +371,6 @@ if ($tasksStmt) {
                 <button type="button" class="task-add-button" aria-label="WIP tasks" title="WIP integration coming next" disabled><i class="fa-solid fa-plus"></i></button>
             </div>
         </article>
-
         <!-- CARD 3: RECURRING -->
         <article class="task-category-card recurring-task-card recurring-column-card">
             <div class="task-card-top">
@@ -335,7 +415,6 @@ if ($tasksStmt) {
                 <button type="button" class="task-add-button" data-open-task-modal aria-label="Add recurring task" title="Add New Task"><i class="fa-solid fa-plus"></i></button>
             </div>
         </article>
-
         <!-- CARD 4: COMPLETED TASKS -->
         <article class="task-category-card completed-task-card">
             <div class="task-card-top">
@@ -367,8 +446,21 @@ if ($tasksStmt) {
                                     <span><?= $tbEscape($task['objective']) ?></span>
                                 </div>
                                 <div class="task-list-footer task-completed-footer-info">
-                                    <span>Started: <?= !empty($task['started_at']) ? $tbEscape(date('d M Y, H:i', strtotime($task['started_at']))) : 'N/A' ?></span>
-                                    <span>Ended: <?= !empty($task['completed_at']) ? $tbEscape(date('d M Y, H:i', strtotime($task['completed_at']))) : 'N/A' ?></span>
+                                    <div class="task-list-footer task-completed-footer-info">
+                                        <span>
+                                            Started:
+                                            <?= !empty($task['started_at'])
+                                                ? $tbEscape(date('d M Y, h:i A', strtotime($task['started_at'])))
+                                                : 'N/A' ?>
+                                        </span>
+
+                                        <span>
+                                            Ended:
+                                            <?= !empty($task['completed_at'])
+                                                ? $tbEscape(date('d M Y, h:i A', strtotime($task['completed_at'])))
+                                                : 'N/A' ?>
+                                        </span>
+                                    </div>
                                 </div>
                             </article>
                         <?php endforeach; ?>
@@ -381,7 +473,6 @@ if ($tasksStmt) {
             </div>
         </article>
     </div>
-
     <!-- CREATE TASK MODAL -->
     <div class="task-modal-overlay" id="task-modal-overlay" hidden>
         <section class="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">

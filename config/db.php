@@ -12,6 +12,8 @@ $conn = new mysqli(
     $password,
     $database
 );
+date_default_timezone_set('Asia/Kolkata');
+$conn->query("SET time_zone = '+05:30'");
 // Check connection
 if ($conn->connect_error) {
     error_log("Database connection failed: " . $conn->connect_error);
